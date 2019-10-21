@@ -6,17 +6,35 @@
 
 package packet
 
-type VarInt [10]byte
+const (
+    MaxVarUintBufSize = 10
+)
 
-func (v *VarInt) Write(d []byte) (int, error) {
-    n := 0
-    for d[n] >> 7 == 1 && n < len(d) {
-        (*v)[n] = d[n]
-        n++
+type VarInt struct {
+    data [10]byte
+    cur  int
+}
+
+//读取可变整数，完成返回true,未完成还需继续读取返回false
+func (v *VarInt) Load(d []byte) bool {
+    for n := 0; n < len(d); n++ {
+        v.data[v.cur] = d[n]
+        v.cur++
+        if d[n]>>7 == 0 {
+            return true
+        }
     }
-    (*v)[n] = d[n]
-    n++
-    return n, nil
+    return false
+}
+
+//读取可变整数，完成返回true,未完成还需继续读取返回false
+func (v *VarInt) Bytes() []byte {
+    return v.data[:v.cur]
+}
+
+//读取可变整数，完成返回true,未完成还需继续读取返回false
+func (v *VarInt) ToInt() int64 {
+    return DecodeVarint(v.Bytes())
 }
 
 //Base 128 Varint的介绍：https://developers.google.com/protocol-buffers/docs/encoding
@@ -24,7 +42,7 @@ func (v *VarInt) Write(d []byte) (int, error) {
 //常规的一个byte是8个bit位，但在Base 128 Varint编码中，将最高的第8位用来作为一个标志位，
 //如果这一位是1，就表示这个字节后面还有其他字节，如果这个位是0的话，就表示这是最后一个字节了，
 //这样一来，就可以准确的知道一个整数的结束位置了。
-func EncodeVarint(buf []byte, x uint64) int {
+func EncodeVaruint(buf []byte, x uint64) int {
     n := 0
     for x > 127 {
         buf[n] = byte(0x80 | (x & 0x7F))
@@ -36,7 +54,17 @@ func EncodeVarint(buf []byte, x uint64) int {
     return n
 }
 
-func DecodeVarint(buf []byte) uint64 {
+func CalcVaruintLen(x uint64) int {
+    n := 0
+    for x > 127 {
+        n++
+        x >>= 7
+    }
+    n++
+    return n
+}
+
+func DecodeVaruint(buf []byte) uint64 {
     var n, shift uint = 0, 0
     var x, c uint64 = 0, 0
     for ; shift < 64; shift += 7 {
@@ -49,4 +77,14 @@ func DecodeVarint(buf []byte) uint64 {
     }
 
     return x
+}
+
+func DecodeVarint(buf []byte) int64 {
+    //ux := DecodeVaruint(buf) // ok to continue in presence of error
+    //x := int64(ux >> 1)
+    //if ux&1 != 0 {
+    //    x = ^x
+    //}
+    //return x
+    return int64(DecodeVaruint(buf))
 }

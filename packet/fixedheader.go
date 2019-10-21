@@ -43,7 +43,7 @@ const (
     vAUTH              = 0 //Reserved	0	0	0	0
 )
 
-type FixedHeader [2]byte
+type FixedHeader [11]byte
 
 func (h FixedHeader) Type() byte {
     return h[0] >> 4
@@ -59,7 +59,7 @@ func (h FixedHeader) PubFlag() (bool, uint8, bool) {
     return flag >> 3 == 1, (flag & 0x6) >> 1, flag & 0x1 == 1
 }
 
-func (h FixedHeader) RemainLength() uint8 {
-    return h[1]
+func (h FixedHeader) RemainLength() uint64 {
+    return DecodeVaruint(h[1:])
 }
 
