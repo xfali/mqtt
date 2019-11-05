@@ -18,11 +18,19 @@ type VarInt struct {
 //读取可变整数，完成返回true,未完成还需继续读取返回false
 func (v *VarInt) Load(d []byte) bool {
     for n := 0; n < len(d); n++ {
-        v.data[v.cur] = d[n]
-        v.cur++
-        if d[n]>>7 == 0 {
+        if v.LoadByte(d[n]) {
             return true
         }
+    }
+    return false
+}
+
+//读取可变整数，完成返回true,未完成还需继续读取返回false
+func (v *VarInt) LoadByte(d byte) bool {
+    v.data[v.cur] = d
+    v.cur++
+    if d>>7 == 0 {
+        return true
     }
     return false
 }
