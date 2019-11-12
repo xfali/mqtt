@@ -6,6 +6,8 @@
 
 package packet
 
+import "io"
+
 const (
     MaxVarUintBufSize = 10
 )
@@ -33,6 +35,34 @@ func (v *VarInt) LoadByte(d byte) bool {
         return true
     }
     return false
+}
+
+func NewFromReader(r io.Reader) *VarInt {
+    v := &VarInt{}
+    for {
+        b, err := v.LoadFromReader(r)
+        if err != nil {
+            return nil
+        }
+        if b {
+            return v
+        }
+    }
+}
+
+func (v *VarInt) LoadFromReader(r io.Reader) (bool, error) {
+    for {
+        _, err := r.Read(v.data[v.cur : v.cur+1])
+        if err != nil {
+            return false, err
+        }
+        if v.data[v.cur]>>7 == 0 {
+            v.cur++
+            return true, nil
+        }
+        v.cur++
+    }
+    return false, nil
 }
 
 //读取可变整数，完成返回true,未完成还需继续读取返回false
