@@ -33,6 +33,23 @@ func NewString(s string) (*String, error) {
     return &ret, nil
 }
 
+func NewStringPair(s1, s2 string) ([2]String, error) {
+    if len(s1) > math.MaxUint16 || len(s2) > math.MaxUint16 {
+        return [2]String{}, errcode.StringOutOfRange
+    }
+    ret := [2]String{
+        String{
+            length: uint16(len(s1)),
+            data:   []byte(s1),
+        },
+        String{
+            length: uint16(len(s2)),
+            data:   []byte(s2),
+        },
+    }
+    return ret, nil
+}
+
 func EncodeString(w io.Writer, s string) (int, error) {
     if len(s) > math.MaxUint16 {
         return 0, errcode.StringOutOfRange

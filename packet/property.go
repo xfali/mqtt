@@ -14,6 +14,67 @@ import (
 )
 
 const (
+    PayloadFormatIndicator          = 1  //0x01	载荷格式说明	字节	PUBLISH, Will Properties
+    MessageExpiryInterval           = 2  //0x02	消息过期时间	四字节整数	PUBLISH, Will Properties
+    ContentType                     = 3  //0x03	内容类型	UTF-8编码字符串	PUBLISH, Will Properties
+    ResponseTopic                   = 8  //0x08	响应主题	UTF-8编码字符串	PUBLISH, Will Properties
+    CorrelationData                 = 9  //0x09	相关数据	二进制数据	PUBLISH, Will Properties
+    SubscriptionIdentifier          = 11 //0x0B	定义标识符	变长字节整数	PUBLISH, SUBSCRIBE
+    SessionExpiryInterval           = 17 //0x11	会话过期间隔	四字节整数	CONNECT, CONNACK, DISCONNECT
+    AssignedClientIdentifier        = 18 //0x12	分配客户标识符	UTF-8编码字符串	CONNACK
+    ServerKeepAlive                 = 19 //0x13	服务端保活时间	双字节整数	CONNACK
+    AuthenticationMethod            = 21 //0x15	认证方法	UTF-8编码字符串	CONNECT, CONNACK, AUTH
+    AuthenticationData              = 22 //0x16	认证数据	二进制数据	CONNECT, CONNACK, AUTH
+    RequestProblemInformation       = 23 //0x17	请求问题信息	字节	CONNECT
+    WillDelayInterval               = 24 //0x18	遗嘱延时间隔	四字节整数	Will Properties
+    RequestResponseInformation      = 25 //0x19	请求响应信息	字节	CONNECT
+    ResponseInformation             = 26 //0x1A	请求信息	UTF-8编码字符串	CONNACK
+    ServerReference                 = 28 //0x1C	服务端参考	UTF-8编码字符串	CONNACK, DISCONNECT
+    ReasonString                    = 31 //0x1F	原因字符串	UTF-8编码字符串	CONNACK, PUBACK, PUBREC, PUBREL, PUBCOMP, SUBACK, UNSUBACK, DISCONNECT, AUTH
+    ReceiveMaximum                  = 33 //0x21	接收最大数量	双字节整数	CONNECT, CONNACK
+    TopicAliasMaximum               = 34 //0x22	主题别名最大长度	双字节整数	CONNECT, CONNACK
+    TopicAlias                      = 35 //0x23	主题别名	双字节整数	PUBLISH
+    MaximumQoS                      = 36 //0x24	最大QoS	字节	CONNACK
+    RetainAvailable                 = 37 //0x25	保留属性可用性	字节	CONNACK
+    UserProperty                    = 38 //0x26	用户属性	UTF-8字符串对	CONNECT, CONNACK, PUBLISH, Will Properties, PUBACK, PUBREC, PUBREL, PUBCOMP, SUBSCRIBE, SUBACK, UNSUBSCRIBE, UNSUBACK, DISCONNECT, AUTH
+    MaximumPacketSize               = 39 //0x27	最大报文长度	四字节整数	CONNECT, CONNACK
+    WildcardSubscriptionAvailable   = 40 //0x28	通配符订阅可用性	字节	CONNACK
+    SubscriptionIdentifierAvailable = 41 //0x29	订阅标识符可用性	字节	CONNACK
+    SharedSubscriptionAvailable     = 42 //0x2A	共享订阅可用性	字节	CONNACK
+)
+
+/*
+var (
+    HexPayloadFormatIndicator          = []byte{PayloadFormatIndicator}
+    HexMessageExpiryInterval           = []byte{MessageExpiryInterval}
+    HexContentType                     = []byte{ContentType}
+    HexResponseTopic                   = []byte{ResponseTopic}
+    HexCorrelationData                 = []byte{CorrelationData}
+    HexSubscriptionIdentifier          = []byte{SubscriptionIdentifier}
+    HexSessionExpiryInterval           = []byte{SessionExpiryInterval}
+    HexAssignedClientIdentifier        = []byte{AssignedClientIdentifier}
+    HexServerKeepAlive                 = []byte{ServerKeepAlive}
+    HexAuthenticationMethod            = []byte{AuthenticationMethod}
+    HexAuthenticationData              = []byte{AuthenticationData}
+    HexRequestProblemInformation       = []byte{RequestProblemInformation}
+    HexWillDelayInterval               = []byte{WillDelayInterval}
+    HexRequestResponseInformation      = []byte{RequestResponseInformation}
+    HexResponseInformation             = []byte{ResponseInformation}
+    HexServerReference                 = []byte{ServerReference}
+    HexReasonString                    = []byte{ReasonString}
+    HexReceiveMaximum                  = []byte{ReceiveMaximum}
+    HexTopicAliasMaximum               = []byte{TopicAliasMaximum}
+    HexTopicAlias                      = []byte{TopicAlias}
+    HexMaximumQoS                      = []byte{MaximumQoS}
+    HexRetainAvailable                 = []byte{RetainAvailable}
+    HexUserProperty                    = []byte{UserProperty}
+    HexMaximumPacketSize               = []byte{MaximumPacketSize}
+    HexWildcardSubscriptionAvailable   = []byte{WildcardSubscriptionAvailable}
+    HexSubscriptionIdentifierAvailable = []byte{SubscriptionIdentifierAvailable}
+    HexSharedSubscriptionAvailable     = []byte{SharedSubscriptionAvailable}
+)
+*/
+const (
     PROPERTY_DECHEX_SIZE = 1
 )
 
@@ -26,69 +87,69 @@ type Getter interface {
 }
 
 type Property interface {
-    DecHex() []byte
+    Id() int64
     DataLen() int32
     UnmarshalData(io.Reader) (int, error)
     MarshalData(io.Writer) (int, error)
 }
 
-type PropPayloadFormatIndicator ByteProperty
-type PropMessageExpiryInterval Uint32Property
-type PropContentType StringProperty
-type PropResponseTopic StringProperty
-type PropCorrelationData StringProperty //ByteDataProperty
-type PropSubscriptionIdentifier VarIntProperty
-type PropSessionExpiryInterval Uint32Property
-type PropAssignedClientIdentifier StringProperty
-type PropServerKeepAlive Uint16Property
-type PropAuthenticationMethod StringProperty
-type PropAuthenticationData StringProperty //ByteDataProperty
-type PropRequestProblemInformation ByteProperty
-type PropWillDelayInterval Uint32Property
-type PropRequestResponseInformation ByteProperty
-type PropResponseInformation StringProperty
-type PropServerReference StringProperty
-type PropReasonString StringProperty
-type PropReceiveMaximum Uint16Property
-type PropTopicAliasMaximum Uint16Property
-type PropTopicAlias Uint16Property
-type PropMaximumQoS ByteProperty
-type PropRetainAvailable ByteProperty
-type PropUserProperty StringPairProperty
-type PropMaximumPacketSize Uint32Property
-type PropWildcardSubscriptionAvailable ByteProperty
-type PropSubscriptionIdentifierAvailable ByteProperty
-type PropSharedSubscriptionAvailable ByteProperty
+type PropPayloadFormatIndicator struct{ ByteProperty }
+type PropMessageExpiryInterval struct{ Uint32Property }
+type PropContentType struct{ StringProperty }
+type PropResponseTopic struct{ StringProperty }
+type PropCorrelationData struct{ StringProperty } //ByteDataProperty
+type PropSubscriptionIdentifier struct{ VarIntProperty }
+type PropSessionExpiryInterval struct{ Uint32Property }
+type PropAssignedClientIdentifier struct{ StringProperty }
+type PropServerKeepAlive struct{ Uint16Property }
+type PropAuthenticationMethod struct{ StringProperty }
+type PropAuthenticationData struct{ StringProperty } //ByteDataProperty
+type PropRequestProblemInformation struct{ ByteProperty }
+type PropWillDelayInterval struct{ Uint32Property }
+type PropRequestResponseInformation struct{ ByteProperty }
+type PropResponseInformation struct{ StringProperty }
+type PropServerReference struct{ StringProperty }
+type PropReasonString struct{ StringProperty }
+type PropReceiveMaximum struct{ Uint16Property }
+type PropTopicAliasMaximum struct{ Uint16Property }
+type PropTopicAlias struct{ Uint16Property }
+type PropMaximumQoS struct{ ByteProperty }
+type PropRetainAvailable struct{ ByteProperty }
+type PropUserProperty struct{ StringPairProperty }
+type PropMaximumPacketSize struct{ Uint32Property }
+type PropWildcardSubscriptionAvailable struct{ ByteProperty }
+type PropSubscriptionIdentifierAvailable struct{ ByteProperty }
+type PropSharedSubscriptionAvailable struct{ ByteProperty }
 
 type PropertyCreator func() Property
 
-func PayloadFormatIndicatorCreator() Property              { return &ByteProperty{decHex: []byte{PayloadFormatIndicator}} }
-func PropMessageExpiryIntervalCreator() Property           { return &Uint32Property{decHex: []byte{MessageExpiryInterval}} }
-func PropContentTypeCreator() Property                     { return &StringProperty{decHex: []byte{ContentType}} }
-func PropResponseTopicCreator() Property                   { return &StringProperty{decHex: []byte{ResponseTopic}} }
-func PropCorrelationDataCreator() Property                 { return &StringProperty{decHex: []byte{CorrelationData}} }
-func PropSubscriptionIdentifierCreator() Property          { return &VarIntProperty{decHex: []byte{SubscriptionIdentifier}} }
-func PropSessionExpiryIntervalCreator() Property           { return &Uint32Property{decHex: []byte{SessionExpiryInterval}} }
-func PropAssignedClientIdentifierCreator() Property        { return &StringProperty{decHex: []byte{AssignedClientIdentifier}} }
-func PropServerKeepAliveCreator() Property                 { return &Uint16Property{decHex: []byte{ServerKeepAlive}} }
-func PropAuthenticationMethodCreator() Property            { return &StringProperty{decHex: []byte{AuthenticationMethod}} }
-func PropAuthenticationDataCreator() Property              { return &StringProperty{decHex: []byte{AuthenticationData}} }
-func PropRequestProblemInformationCreator() Property       { return &ByteProperty{decHex: []byte{RequestProblemInformation}} }
-func PropWillDelayIntervalCreator() Property               { return &Uint32Property{decHex: []byte{WillDelayInterval}} }
-func PropRequestResponseInformationCreator() Property      { return &ByteProperty{decHex: []byte{RequestResponseInformation}} }
-func PropResponseInformationCreator() Property             { return &StringProperty{decHex: []byte{ResponseInformation}} }
-func PropServerReferenceCreator() Property                 { return &StringProperty{decHex: []byte{ServerReference}} }
-func PropReasonStringCreator() Property                    { return &StringProperty{decHex: []byte{ReasonString}} }
-func PropReceiveMaximumCreator() Property                  { return &Uint16Property{decHex: []byte{ReceiveMaximum}} }
-func PropTopicAliasMaximumCreator() Property               { return &Uint16Property{decHex: []byte{TopicAliasMaximum}} }
-func PropTopicAliasCreator() Property                      { return &Uint16Property{decHex: []byte{TopicAlias}} }
-func PropMaximumQoSCreator() Property                      { return &ByteProperty{decHex: []byte{MaximumQoS}} }
-func PropRetainAvailableCreator() Property                 { return &ByteProperty{decHex: []byte{RetainAvailable}} }
-func PropUserPropertyCreator() Property                    { return &StringPairProperty{decHex: []byte{UserProperty}} }
-func PropMaximumPacketSizeCreator() Property               { return &Uint32Property{decHex: []byte{MaximumPacketSize}} }
-func PropWildcardSubscriptionAvailableCreator() Property   { return &ByteProperty{decHex: []byte{WildcardSubscriptionAvailable}} }
-func PropSubscriptionIdentifierAvailableCreator() Property { return &ByteProperty{decHex: []byte{SubscriptionIdentifierAvailable}} }
-func PropSharedSubscriptionAvailableCreator() Property     { return &ByteProperty{decHex: []byte{SharedSubscriptionAvailable}} }
+func PayloadFormatIndicatorCreator() Property              { return &PropPayloadFormatIndicator{} }
+func PropMessageExpiryIntervalCreator() Property           { return &PropMessageExpiryInterval{} }
+func PropContentTypeCreator() Property                     { return &PropContentType{} }
+func PropResponseTopicCreator() Property                   { return &PropResponseTopic{} }
+func PropCorrelationDataCreator() Property                 { return &PropCorrelationData{} }
+func PropSubscriptionIdentifierCreator() Property          { return &PropSubscriptionIdentifier{} }
+func PropSessionExpiryIntervalCreator() Property           { return &PropSessionExpiryInterval{} }
+func PropAssignedClientIdentifierCreator() Property        { return &PropAssignedClientIdentifier{} }
+func PropServerKeepAliveCreator() Property                 { return &PropServerKeepAlive{} }
+func PropAuthenticationMethodCreator() Property            { return &PropAuthenticationMethod{} }
+func PropAuthenticationDataCreator() Property              { return &PropAuthenticationData{} }
+func PropRequestProblemInformationCreator() Property       { return &PropRequestProblemInformation{} }
+func PropWillDelayIntervalCreator() Property               { return &PropWillDelayInterval{} }
+func PropRequestResponseInformationCreator() Property      { return &PropRequestResponseInformation{} }
+func PropResponseInformationCreator() Property             { return &PropResponseInformation{} }
+func PropServerReferenceCreator() Property                 { return &PropServerReference{} }
+func PropReasonStringCreator() Property                    { return &PropReasonString{} }
+func PropReceiveMaximumCreator() Property                  { return &PropReceiveMaximum{} }
+func PropTopicAliasMaximumCreator() Property               { return &PropTopicAliasMaximum{} }
+func PropTopicAliasCreator() Property                      { return &PropTopicAlias{} }
+func PropMaximumQoSCreator() Property                      { return &PropMaximumQoS{} }
+func PropRetainAvailableCreator() Property                 { return &PropRetainAvailable{} }
+func PropUserPropertyCreator() Property                    { return &PropUserProperty{} }
+func PropMaximumPacketSizeCreator() Property               { return &PropMaximumPacketSize{} }
+func PropWildcardSubscriptionAvailableCreator() Property   { return &PropWildcardSubscriptionAvailable{} }
+func PropSubscriptionIdentifierAvailableCreator() Property { return &PropSubscriptionIdentifierAvailable{} }
+func PropSharedSubscriptionAvailableCreator() Property     { return &PropSharedSubscriptionAvailable{} }
 
 var propFac = map[byte]PropertyCreator{
     PayloadFormatIndicator:          PayloadFormatIndicatorCreator,
@@ -139,7 +200,7 @@ func UnmarshalProp(r io.Reader) (Property, int, error) {
 }
 
 func MarshalProp(w io.Writer, prop Property) (int, error) {
-    n1, err := w.Write(prop.DecHex())
+    n1, err := w.Write([]byte{byte(prop.Id())})
     if err != nil {
         return n1, err
     }
@@ -156,12 +217,7 @@ func CreateProperty(t byte) Property {
 }
 
 type Uint16Property struct {
-    decHex []byte
-    V      uint16
-}
-
-func (prop *Uint16Property) DecHex() []byte {
-    return prop.decHex
+    V uint16
 }
 
 func (prop *Uint16Property) DataLen() int32 {
@@ -185,21 +241,16 @@ func (prop *Uint16Property) MarshalData(w io.Writer) (int, error) {
     return w.Write(buf)
 }
 
-func (prop *Uint16Property)Set(v interface{}) {
+func (prop *Uint16Property) Set(v interface{}) {
     prop.V = v.(uint16)
 }
 
-func (prop *Uint16Property)Get() interface{} {
+func (prop *Uint16Property) Get() interface{} {
     return prop.V
 }
 
 type Uint32Property struct {
-    decHex []byte
-    V      uint32
-}
-
-func (prop *Uint32Property) DecHex() []byte {
-    return prop.decHex
+    V uint32
 }
 
 func (prop *Uint32Property) DataLen() int32 {
@@ -224,12 +275,7 @@ func (prop *Uint32Property) MarshalData(w io.Writer) (int, error) {
 }
 
 type ByteProperty struct {
-    decHex []byte
-    V      byte
-}
-
-func (prop *ByteProperty) DecHex() []byte {
-    return prop.decHex
+    V byte
 }
 
 func (prop *ByteProperty) DataLen() int32 {
@@ -252,12 +298,7 @@ func (prop *ByteProperty) MarshalData(w io.Writer) (int, error) {
 }
 
 type VarIntProperty struct {
-    decHex []byte
-    V      VarInt
-}
-
-func (prop *VarIntProperty) DecHex() []byte {
-    return prop.decHex
+    V VarInt
 }
 
 func (prop *VarIntProperty) DataLen() int32 {
@@ -284,12 +325,7 @@ func (prop *VarIntProperty) MarshalData(w io.Writer) (int, error) {
 }
 
 type StringProperty struct {
-    decHex []byte
-    V      String
-}
-
-func (prop *StringProperty) DecHex() []byte {
-    return prop.decHex
+    V String
 }
 
 func (prop *StringProperty) DataLen() int32 {
@@ -310,12 +346,7 @@ func (prop *StringProperty) MarshalData(w io.Writer) (int, error) {
 }
 
 type StringPairProperty struct {
-    decHex []byte
-    V      [2]String
-}
-
-func (prop *StringPairProperty) DecHex() []byte {
-    return prop.decHex
+    V [2]String
 }
 
 func (prop *StringPairProperty) DataLen() int32 {
@@ -470,13 +501,13 @@ func SetAuthenticationData(v []byte) PropOpt {
     }
 }
 
-func ReadProperty(r io.Reader) ([]Property, int, error) {
+func ReadProperties(r io.Reader) ([]Property, int, error) {
     v := NewFromReader(r)
     if v == nil {
         return nil, 0, errcode.ParseVarIntFailed
     }
     length := int(v.ToInt())
-    var size int = 0
+    var size int = v.Length()
     var propList []Property
     for size < length {
         p, n, err := UnmarshalProp(r)
@@ -490,11 +521,11 @@ func ReadProperty(r io.Reader) ([]Property, int, error) {
     return propList, size, nil
 }
 
-func WriteProperty(w io.Writer, props []Property) (int, error) {
+func WriteProperties(w io.Writer, props []Property) (int, error) {
     v := VarInt{}
     propLen := 0
     for _, v := range props {
-        propLen += len(v.DecHex()) + int(v.DataLen())
+        propLen += PROPERTY_DECHEX_SIZE + int(v.DataLen())
     }
     v.InitFromUInt64(uint64(propLen))
     size := 0
@@ -513,3 +544,31 @@ func WriteProperty(w io.Writer, props []Property) (int, error) {
     }
     return size, nil
 }
+
+func (p *PropPayloadFormatIndicator) Id() int64          { return PayloadFormatIndicator }
+func (p *PropMessageExpiryInterval) Id() int64           { return MessageExpiryInterval }
+func (p *PropContentType) Id() int64                     { return ContentType }
+func (p *PropResponseTopic) Id() int64                   { return ResponseTopic }
+func (p *PropCorrelationData) Id() int64                 { return CorrelationData }
+func (p *PropSubscriptionIdentifier) Id() int64          { return SubscriptionIdentifier }
+func (p *PropSessionExpiryInterval) Id() int64           { return SessionExpiryInterval }
+func (p *PropAssignedClientIdentifier) Id() int64        { return AssignedClientIdentifier }
+func (p *PropServerKeepAlive) Id() int64                 { return ServerKeepAlive }
+func (p *PropAuthenticationMethod) Id() int64            { return AuthenticationMethod }
+func (p *PropAuthenticationData) Id() int64              { return AuthenticationData }
+func (p *PropRequestProblemInformation) Id() int64       { return RequestProblemInformation }
+func (p *PropWillDelayInterval) Id() int64               { return WillDelayInterval }
+func (p *PropRequestResponseInformation) Id() int64      { return RequestResponseInformation }
+func (p *PropResponseInformation) Id() int64             { return ResponseInformation }
+func (p *PropServerReference) Id() int64                 { return ServerReference }
+func (p *PropReasonString) Id() int64                    { return ReasonString }
+func (p *PropReceiveMaximum) Id() int64                  { return ReceiveMaximum }
+func (p *PropTopicAliasMaximum) Id() int64               { return TopicAliasMaximum }
+func (p *PropTopicAlias) Id() int64                      { return TopicAlias }
+func (p *PropMaximumQoS) Id() int64                      { return MaximumQoS }
+func (p *PropRetainAvailable) Id() int64                 { return RetainAvailable }
+func (p *PropUserProperty) Id() int64                    { return UserProperty }
+func (p *PropMaximumPacketSize) Id() int64               { return MaximumPacketSize }
+func (p *PropWildcardSubscriptionAvailable) Id() int64   { return WildcardSubscriptionAvailable }
+func (p *PropSubscriptionIdentifierAvailable) Id() int64 { return SubscriptionIdentifierAvailable }
+func (p *PropSharedSubscriptionAvailable) Id() int64     { return SharedSubscriptionAvailable }
