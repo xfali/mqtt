@@ -30,10 +30,12 @@ func TestProperty1(t *testing.T) {
 
     t.Log(buf.Bytes())
 
-    props, n, err := packet.ReadProperties(buf)
+    props, n, err := packet.ReadPropertyMap(buf)
     if err != nil {
         t.Fatal(err)
     }
     t.Log("read n ", n)
-    t.Log(props)
+    p := props[packet.SessionExpiryInterval]
+    if p != nil {
+    }
 }

@@ -91,6 +91,9 @@ type Property interface {
     DataLen() int32
     UnmarshalData(io.Reader) (int, error)
     MarshalData(io.Writer) (int, error)
+
+    Setter
+    Getter
 }
 
 type PropPayloadFormatIndicator struct{ ByteProperty }
@@ -220,6 +223,14 @@ type Uint16Property struct {
     V uint16
 }
 
+func (prop *Uint16Property) Set(v interface{}) {
+    prop.V = v.(uint16)
+}
+
+func (prop *Uint16Property) Get() interface{} {
+    return prop.V
+}
+
 func (prop *Uint16Property) DataLen() int32 {
     return 2
 }
@@ -241,16 +252,16 @@ func (prop *Uint16Property) MarshalData(w io.Writer) (int, error) {
     return w.Write(buf)
 }
 
-func (prop *Uint16Property) Set(v interface{}) {
-    prop.V = v.(uint16)
-}
-
-func (prop *Uint16Property) Get() interface{} {
-    return prop.V
-}
-
 type Uint32Property struct {
     V uint32
+}
+
+func (prop *Uint32Property) Set(v interface{}) {
+    prop.V = v.(uint32)
+}
+
+func (prop *Uint32Property) Get() interface{} {
+    return prop.V
 }
 
 func (prop *Uint32Property) DataLen() int32 {
@@ -278,7 +289,15 @@ type ByteProperty struct {
     V byte
 }
 
-func (prop *ByteProperty) DataLen() int32 {
+func (prop *ByteProperty) Set(v interface{}) {
+    prop.V = v.(byte)
+}
+
+func (prop *ByteProperty) Get() interface{} {
+    return prop.V
+}
+
+func (prop *ByteProperty)DataLen() int32 {
     return 1
 }
 
@@ -299,6 +318,14 @@ func (prop *ByteProperty) MarshalData(w io.Writer) (int, error) {
 
 type VarIntProperty struct {
     V VarInt
+}
+
+func (prop *VarIntProperty) Set(v interface{}) {
+    prop.V = v.(VarInt)
+}
+
+func (prop *VarIntProperty) Get() interface{} {
+    return prop.V
 }
 
 func (prop *VarIntProperty) DataLen() int32 {
@@ -328,6 +355,14 @@ type StringProperty struct {
     V String
 }
 
+func (prop *StringProperty) Set(v interface{}) {
+    prop.V = v.(String)
+}
+
+func (prop *StringProperty) Get() interface{} {
+    return prop.V
+}
+
 func (prop *StringProperty) DataLen() int32 {
     return int32(prop.V.AllLength())
 }
@@ -347,6 +382,14 @@ func (prop *StringProperty) MarshalData(w io.Writer) (int, error) {
 
 type StringPairProperty struct {
     V [2]String
+}
+
+func (prop *StringPairProperty) Set(v interface{}) {
+    prop.V = v.([2]String)
+}
+
+func (prop *StringPairProperty) Get() interface{} {
+    return prop.V
 }
 
 func (prop *StringPairProperty) DataLen() int32 {
@@ -501,13 +544,22 @@ func SetAuthenticationData(v []byte) PropOpt {
     }
 }
 
+func GetPropValue(t int64, props []Property) interface{} {
+    for i := range  props {
+        if props[i].Id() == t {
+            return props[i].Get()
+        }
+    }
+    return nil
+}
+
 func ReadProperties(r io.Reader) ([]Property, int, error) {
     v := NewFromReader(r)
     if v == nil {
         return nil, 0, errcode.ParseVarIntFailed
     }
     length := int(v.ToInt())
-    var size int = v.Length()
+    size := v.Length()
     var propList []Property
     for size < length {
         p, n, err := UnmarshalProp(r)
@@ -519,6 +571,26 @@ func ReadProperties(r io.Reader) ([]Property, int, error) {
     }
 
     return propList, size, nil
+}
+
+func ReadPropertyMap(r io.Reader) (map[int64]Property, int, error) {
+    v := NewFromReader(r)
+    if v == nil {
+        return nil, 0, errcode.ParseVarIntFailed
+    }
+    length := int(v.ToInt())
+    size := v.Length()
+    propMap := map[int64]Property{}
+    for size < length {
+        p, n, err := UnmarshalProp(r)
+        if err != nil {
+            return nil, size, err
+        }
+        propMap[p.Id()] = p
+        size += n
+    }
+
+    return propMap, size, nil
 }
 
 func WriteProperties(w io.Writer, props []Property) (int, error) {
