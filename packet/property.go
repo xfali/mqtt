@@ -381,11 +381,11 @@ func (prop *StringProperty) MarshalData(w io.Writer) (int, error) {
 }
 
 type StringPairProperty struct {
-    V [2]String
+    V StringPair
 }
 
 func (prop *StringPairProperty) Set(v interface{}) {
-    prop.V = v.([2]String)
+    prop.V = v.(StringPair)
 }
 
 func (prop *StringPairProperty) Get() interface{} {

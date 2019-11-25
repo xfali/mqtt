@@ -20,6 +20,8 @@ type String struct {
     data   []byte
 }
 
+type StringPair [2]String
+
 type Bytes String
 
 func NewString(s string) (*String, error) {
@@ -33,7 +35,7 @@ func NewString(s string) (*String, error) {
     return &ret, nil
 }
 
-func NewStringPair(s1, s2 string) ([2]String, error) {
+func NewStringPair(s1, s2 string) (StringPair, error) {
     if len(s1) > math.MaxUint16 || len(s2) > math.MaxUint16 {
         return [2]String{}, errcode.StringOutOfRange
     }

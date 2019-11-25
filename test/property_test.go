@@ -14,10 +14,11 @@ import (
 
 func TestProperty1(t *testing.T) {
     p1 := &packet.PropSessionExpiryInterval{}
-    p1.V  = 12
+    p1.V = 12
 
     p2 := &packet.PropUserProperty{}
-    p2.V, _ = packet.NewStringPair("test1", "test2")
+    s, _ := packet.NewStringPair("test1", "test2")
+    p2.V = s
 
     buf := bytes.NewBuffer(nil)
     n, err := packet.WriteProperties(buf, []packet.Property{
@@ -37,5 +38,13 @@ func TestProperty1(t *testing.T) {
     t.Log("read n ", n)
     p := props[packet.SessionExpiryInterval]
     if p != nil {
+        t.Log(p.Get().(uint32))
+    }
+
+    p = props[packet.UserProperty]
+    if p != nil {
+        pair := p.Get().(packet.StringPair)
+        t.Log(pair[0].String())
+        t.Log(pair[1].String())
     }
 }
