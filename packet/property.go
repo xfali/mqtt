@@ -13,16 +13,23 @@ import (
     "mqtt/errcode"
 )
 
-//type Property struct {
-//    DecHex []byte
-//    Data   []byte
-//}
+const (
+    PROPERTY_DECHEX_SIZE = 1
+)
+
+type Setter interface {
+    Set(interface{})
+}
+
+type Getter interface {
+    Get() interface{}
+}
 
 type Property interface {
     DecHex() []byte
     DataLen() int32
-    UnmarshalData(r io.Reader) error
-    MarshalData(w io.Writer) error
+    UnmarshalData(io.Reader) (int, error)
+    MarshalData(io.Writer) (int, error)
 }
 
 type PropPayloadFormatIndicator ByteProperty
@@ -113,31 +120,32 @@ var propFac = map[byte]PropertyCreator{
     SharedSubscriptionAvailable:     PropSharedSubscriptionAvailableCreator,
 }
 
-func UnmarshalProp(r io.Reader) (prop Property, err error) {
+func UnmarshalProp(r io.Reader) (Property, int, error) {
     b := make([]byte, 1)
-    _, err = io.ReadFull(r, b)
+    n1, err := io.ReadFull(r, b)
     if err != nil {
-        return nil, err
+        return nil, n1, err
     }
-    prop = CreateProperty(b[0])
+    prop := CreateProperty(b[0])
     if prop == nil {
-        return nil, errcode.UnknownProperty
+        return nil, n1, errcode.UnknownProperty
     }
 
-    err = prop.UnmarshalData(r)
+    n2, err := prop.UnmarshalData(r)
     if err != nil {
-        return nil, err
+        return nil, n1 + n2, err
     }
-    return
+    return prop, n1 + n2, nil
 }
 
-func MarshalProp(w io.Writer, prop Property) error {
-    _, err := w.Write(prop.DecHex())
+func MarshalProp(w io.Writer, prop Property) (int, error) {
+    n1, err := w.Write(prop.DecHex())
     if err != nil {
-        return err
+        return n1, err
     }
 
-    return prop.MarshalData(w)
+    n2, err := prop.MarshalData(w)
+    return n1 + n2, err
 }
 
 func CreateProperty(t byte) Property {
@@ -149,7 +157,7 @@ func CreateProperty(t byte) Property {
 
 type Uint16Property struct {
     decHex []byte
-    v      uint16
+    V      uint16
 }
 
 func (prop *Uint16Property) DecHex() []byte {
@@ -160,27 +168,34 @@ func (prop *Uint16Property) DataLen() int32 {
     return 2
 }
 
-func (prop *Uint16Property) UnmarshalData(r io.Reader) error {
+func (prop *Uint16Property) UnmarshalData(r io.Reader) (int, error) {
     buf := make([]byte, 2)
-    _, err := io.ReadFull(r, buf)
+    n, err := io.ReadFull(r, buf)
     if err != nil {
-        return err
+        return n, err
     }
 
-    prop.v = binary.BigEndian.Uint16(buf)
-    return nil
+    prop.V = binary.BigEndian.Uint16(buf)
+    return n, nil
 }
 
-func (prop *Uint16Property) MarshalData(w io.Writer) error {
+func (prop *Uint16Property) MarshalData(w io.Writer) (int, error) {
     buf := make([]byte, 2)
-    binary.BigEndian.PutUint16(buf, prop.v)
-    _, err := w.Write(buf)
-    return err
+    binary.BigEndian.PutUint16(buf, prop.V)
+    return w.Write(buf)
+}
+
+func (prop *Uint16Property)Set(v interface{}) {
+    prop.V = v.(uint16)
+}
+
+func (prop *Uint16Property)Get() interface{} {
+    return prop.V
 }
 
 type Uint32Property struct {
     decHex []byte
-    v      uint32
+    V      uint32
 }
 
 func (prop *Uint32Property) DecHex() []byte {
@@ -191,27 +206,26 @@ func (prop *Uint32Property) DataLen() int32 {
     return 4
 }
 
-func (prop *Uint32Property) UnmarshalData(r io.Reader) error {
+func (prop *Uint32Property) UnmarshalData(r io.Reader) (int, error) {
     buf := make([]byte, 4)
-    _, err := io.ReadFull(r, buf)
+    n, err := io.ReadFull(r, buf)
     if err != nil {
-        return err
+        return n, err
     }
 
-    prop.v = binary.BigEndian.Uint32(buf)
-    return nil
+    prop.V = binary.BigEndian.Uint32(buf)
+    return n, nil
 }
 
-func (prop *Uint32Property) MarshalData(w io.Writer) error {
+func (prop *Uint32Property) MarshalData(w io.Writer) (int, error) {
     buf := make([]byte, 4)
-    binary.BigEndian.PutUint32(buf, prop.v)
-    _, err := w.Write(buf)
-    return err
+    binary.BigEndian.PutUint32(buf, prop.V)
+    return w.Write(buf)
 }
 
 type ByteProperty struct {
     decHex []byte
-    v      byte
+    V      byte
 }
 
 func (prop *ByteProperty) DecHex() []byte {
@@ -222,25 +236,24 @@ func (prop *ByteProperty) DataLen() int32 {
     return 1
 }
 
-func (prop *ByteProperty) UnmarshalData(r io.Reader) error {
+func (prop *ByteProperty) UnmarshalData(r io.Reader) (int, error) {
     buf := make([]byte, 1)
-    _, err := io.ReadFull(r, buf)
+    n, err := io.ReadFull(r, buf)
     if err != nil {
-        return err
+        return n, err
     }
 
-    prop.v = buf[0]
-    return nil
+    prop.V = buf[0]
+    return n, nil
 }
 
-func (prop *ByteProperty) MarshalData(w io.Writer) error {
-    _, err := w.Write([]byte{prop.v})
-    return err
+func (prop *ByteProperty) MarshalData(w io.Writer) (int, error) {
+    return w.Write([]byte{prop.V})
 }
 
 type VarIntProperty struct {
     decHex []byte
-    v      VarInt
+    V      VarInt
 }
 
 func (prop *VarIntProperty) DecHex() []byte {
@@ -248,22 +261,31 @@ func (prop *VarIntProperty) DecHex() []byte {
 }
 
 func (prop *VarIntProperty) DataLen() int32 {
-    return int32(prop.v.Length())
+    return int32(prop.V.Length())
 }
 
-func (prop *VarIntProperty) UnmarshalData(r io.Reader) error {
-    _, err := prop.v.LoadFromReader(r)
-    return err
+func (prop *VarIntProperty) UnmarshalData(r io.Reader) (int, error) {
+    size := 0
+    for {
+        b, n, err := prop.V.LoadFromReader(r)
+        if err != nil {
+            return size + n, err
+        }
+        if b {
+            break
+        }
+        size += n
+    }
+    return size, nil
 }
 
-func (prop *VarIntProperty) MarshalData(w io.Writer) error {
-    _, err := w.Write(prop.v.Bytes())
-    return err
+func (prop *VarIntProperty) MarshalData(w io.Writer) (int, error) {
+    return w.Write(prop.V.Bytes())
 }
 
 type StringProperty struct {
     decHex []byte
-    v      String
+    V      String
 }
 
 func (prop *StringProperty) DecHex() []byte {
@@ -271,25 +293,25 @@ func (prop *StringProperty) DecHex() []byte {
 }
 
 func (prop *StringProperty) DataLen() int32 {
-    return int32(prop.v.AllLength())
+    return int32(prop.V.AllLength())
 }
 
-func (prop *StringProperty) UnmarshalData(r io.Reader) error {
-    s, err := ParseString(r)
+func (prop *StringProperty) UnmarshalData(r io.Reader) (int, error) {
+    s, n, err := ParseString(r)
     if err != nil {
-        return err
+        return n, err
     }
-    prop.v = *s
-    return nil
+    prop.V = *s
+    return n, nil
 }
 
-func (prop *StringProperty) MarshalData(w io.Writer) error {
-    return WriteString(w, prop.v)
+func (prop *StringProperty) MarshalData(w io.Writer) (int, error) {
+    return WriteString(w, prop.V)
 }
 
 type StringPairProperty struct {
     decHex []byte
-    v      [2]String
+    V      [2]String
 }
 
 func (prop *StringPairProperty) DecHex() []byte {
@@ -297,30 +319,31 @@ func (prop *StringPairProperty) DecHex() []byte {
 }
 
 func (prop *StringPairProperty) DataLen() int32 {
-    return int32(prop.v[0].AllLength() + prop.v[1].AllLength())
+    return int32(prop.V[0].AllLength() + prop.V[1].AllLength())
 }
 
-func (prop *StringPairProperty) UnmarshalData(r io.Reader) error {
-    s1, err := ParseString(r)
+func (prop *StringPairProperty) UnmarshalData(r io.Reader) (int, error) {
+    s1, n1, err := ParseString(r)
     if err != nil {
-        return err
+        return n1, err
     }
-    prop.v[0] = *s1
+    prop.V[0] = *s1
 
-    s2, err := ParseString(r)
+    s2, n2, err := ParseString(r)
     if err != nil {
-        return err
+        return n1 + n2, err
     }
-    prop.v[1] = *s2
-    return nil
+    prop.V[1] = *s2
+    return n1 + n2, nil
 }
 
-func (prop *StringPairProperty) MarshalData(w io.Writer) error {
-    err := WriteString(w, prop.v[0])
+func (prop *StringPairProperty) MarshalData(w io.Writer) (int, error) {
+    n1, err := WriteString(w, prop.V[0])
     if err != nil {
-        return err
+        return n1, err
     }
-    return WriteString(w, prop.v[1])
+    n2, err := WriteString(w, prop.V[1])
+    return n1 + n2, err
 }
 
 type PropOpt func(io.Writer) error
@@ -447,17 +470,46 @@ func SetAuthenticationData(v []byte) PropOpt {
     }
 }
 
-func ReadProperty(r io.Reader) error {
+func ReadProperty(r io.Reader) ([]Property, int, error) {
     v := NewFromReader(r)
     if v == nil {
-        return errcode.ParseVarIntFailed
+        return nil, 0, errcode.ParseVarIntFailed
     }
-    length := v.ToInt()
-    buf := make([]byte, length)
-    _, err := r.Read(buf)
-    if err != nil {
-        return err
+    length := int(v.ToInt())
+    var size int = 0
+    var propList []Property
+    for size < length {
+        p, n, err := UnmarshalProp(r)
+        if err != nil {
+            return nil, size, err
+        }
+        propList = append(propList, p)
+        size += n
     }
 
-    return nil
+    return propList, size, nil
+}
+
+func WriteProperty(w io.Writer, props []Property) (int, error) {
+    v := VarInt{}
+    propLen := 0
+    for _, v := range props {
+        propLen += len(v.DecHex()) + int(v.DataLen())
+    }
+    v.InitFromUInt64(uint64(propLen))
+    size := 0
+
+    n, err := w.Write(v.Bytes())
+    if err != nil {
+        return n, err
+    }
+    size += n
+    for _, v := range props {
+        n, err := MarshalProp(w, v)
+        if err != nil {
+            return size + n, err
+        }
+        size += n
+    }
+    return size, nil
 }

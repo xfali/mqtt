@@ -13,7 +13,7 @@ const (
 )
 
 type VarInt struct {
-    data [10]byte
+    data [MaxVarUintBufSize]byte
     cur  int
 }
 
@@ -40,7 +40,7 @@ func (v *VarInt) LoadByte(d byte) bool {
 func NewFromReader(r io.Reader) *VarInt {
     v := &VarInt{}
     for {
-        b, err := v.LoadFromReader(r)
+        b, _, err := v.LoadFromReader(r)
         if err != nil {
             return nil
         }
@@ -50,19 +50,26 @@ func NewFromReader(r io.Reader) *VarInt {
     }
 }
 
-func (v *VarInt) LoadFromReader(r io.Reader) (bool, error) {
+func (v *VarInt) InitFromUInt64(x uint64) {
+    n := EncodeVaruint(v.data[:], x)
+    v.cur = n
+}
+
+func (v *VarInt) LoadFromReader(r io.Reader) (bool, int, error) {
+    size := 0
     for {
-        _, err := r.Read(v.data[v.cur : v.cur+1])
+        n, err := r.Read(v.data[v.cur : v.cur+1])
         if err != nil {
-            return false, err
+            return false, n, err
         }
+        size += n
         if v.data[v.cur]>>7 == 0 {
             v.cur++
-            return true, nil
+            return true, size, nil
         }
         v.cur++
     }
-    return false, nil
+    return false, size, nil
 }
 
 //长度

@@ -53,45 +53,48 @@ func EncodeString(w io.Writer, s string) (int, error) {
     return n + n2, nil
 }
 
-func WriteString(w io.Writer, s String) error {
+func WriteString(w io.Writer, s String) (int, error) {
     b := make([]byte, 2)
     l := s.length
     b[0] = byte(l >> 8)
     b[1] = byte(0xFF & l)
-    _, err := w.Write(b)
+    n, err := w.Write(b)
     if err != nil {
-        return err
+        return n, err
     }
-    _, err2 := w.Write([]byte(s.data))
+    n2, err2 := w.Write([]byte(s.data))
     if err != nil {
-        return err2
+        return n + n2, err2
     }
 
-    return nil
+    return n + n2, nil
 }
 
-func ParseString(r io.Reader) (ret *String, err error) {
+func ParseString(r io.Reader) (ret *String, n int, err error) {
     header := make([]byte, 1)
     var size uint16
-
-    _, err = r.Read(header)
+    readSize := 0
+    n, err = r.Read(header)
     if err != nil {
-        return nil, err
+        return nil, n, err
     }
+    readSize += n
     size = uint16(header[0] << 8)
-    _, err = r.Read(header)
+    n, err = r.Read(header)
     if err != nil {
-        return nil, err
+        return nil, readSize + n, err
     }
+    readSize += n
     size |= uint16(header[0])
 
     buf := make([]byte, size)
-    _, err = r.Read(buf)
+    n, err = r.Read(buf)
     if err != nil {
-        return nil, err
+        return nil, readSize + n, err
     }
+    readSize += n
 
-    return &String{length: size, data: buf}, nil
+    return &String{length: size, data: buf}, readSize, nil
 }
 
 func (s *String) Length() uint16 {

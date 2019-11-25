@@ -25,7 +25,7 @@ func TestString1(t *testing.T) {
     io.Copy(buf, &r)
     t.Log("buf", buf.Bytes())
 
-    s2, err := packet.ParseString(buf)
+    s2, _, err := packet.ParseString(buf)
     if err != nil {
         if err != io.EOF {
             t.Fatal(err)

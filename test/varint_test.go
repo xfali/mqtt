@@ -58,8 +58,8 @@ func TestVarint3(t *testing.T) {
     v := packet.VarInt{}
     buf := make([]byte, 10)
     n := packet.EncodeVaruint(buf, 0xFFFFFFF+1)
-    for x:=1; x <= n; x++ {
-        if v.Load(buf[x-1:x]) {
+    for x := 1; x <= n; x++ {
+        if v.Load(buf[x-1 : x]) {
             break
         }
     }
@@ -67,7 +67,6 @@ func TestVarint3(t *testing.T) {
     i := v.ToInt()
     t.Log("i : ", i, "v", 0xFFFFFFF+1)
 }
-
 
 func TestVarint4(t *testing.T) {
     buf := make([]byte, 10)
@@ -95,7 +94,7 @@ func TestVarint5(t *testing.T) {
     t.Run("LoadFromReader", func(t *testing.T) {
         r := bytes.NewReader(buf[:n])
         v := packet.VarInt{}
-        _, err := v.LoadFromReader(r)
+        _, _, err := v.LoadFromReader(r)
         if err != nil {
             t.Fatal(err)
         }
