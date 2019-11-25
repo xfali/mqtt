@@ -20,6 +20,8 @@ type String struct {
     data   []byte
 }
 
+type Bytes String
+
 func NewString(s string) (*String, error) {
     if len(s) > math.MaxUint16 {
         return nil, errcode.StringOutOfRange
@@ -45,40 +47,59 @@ func EncodeString(w io.Writer, s string) (int, error) {
     }
     n2, err2 := w.Write([]byte(s))
     if err != nil {
-        return n+n2, err2
+        return n + n2, err2
     }
 
-    return n+n2, nil
+    return n + n2, nil
 }
 
-func ParseString(r io.ByteReader) (*String, error) {
-    var buf []byte
-    var s, size uint16
-    for i := 0; ; i++ {
-        b, err := r.ReadByte()
-        if err != nil {
-            return &String{length: size, data: buf}, err
-        }
-        if i == 0 {
-            size = uint16(b << 8)
-            continue
-        } else if i == 1 {
-            size |= uint16(b)
-            buf = make([]byte, size)
-            continue
-        }
-
-        if size <= s {
-            break
-        }
-        buf[s] = b
-        s++
+func WriteString(w io.Writer, s String) error {
+    b := make([]byte, 2)
+    l := s.length
+    b[0] = byte(l >> 8)
+    b[1] = byte(0xFF & l)
+    _, err := w.Write(b)
+    if err != nil {
+        return err
     }
+    _, err2 := w.Write([]byte(s.data))
+    if err != nil {
+        return err2
+    }
+
+    return nil
+}
+
+func ParseString(r io.Reader) (ret *String, err error) {
+    header := make([]byte, 1)
+    var size uint16
+
+    _, err = r.Read(header)
+    if err != nil {
+        return nil, err
+    }
+    size = uint16(header[0] << 8)
+    _, err = r.Read(header)
+    if err != nil {
+        return nil, err
+    }
+    size |= uint16(header[0])
+
+    buf := make([]byte, size)
+    _, err = r.Read(buf)
+    if err != nil {
+        return nil, err
+    }
+
     return &String{length: size, data: buf}, nil
 }
 
 func (s *String) Length() uint16 {
     return s.length
+}
+
+func (s *String) AllLength() uint16 {
+    return s.length + 2
 }
 
 func (s *String) String() string {

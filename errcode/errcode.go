@@ -10,3 +10,4 @@ import "errors"
 
 var StringOutOfRange = errors.New("String is out of range:Max is 65535 ")
 var ParseVarIntFailed = errors.New("Parse VarInt error ")
+var UnknownProperty = errors.New("Unknown Property error ")

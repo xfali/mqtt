@@ -65,6 +65,11 @@ func (v *VarInt) LoadFromReader(r io.Reader) (bool, error) {
     return false, nil
 }
 
+//长度
+func (v *VarInt) Length() int {
+    return v.cur
+}
+
 //读取可变整数，完成返回true,未完成还需继续读取返回false
 func (v *VarInt) Bytes() []byte {
     return v.data[:v.cur]
