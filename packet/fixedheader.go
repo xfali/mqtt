@@ -6,6 +6,8 @@
 
 package packet
 
+import "io"
+
 const (
     PktTypeReserved    = 0  //禁止    保留
     PktTypeCONNECT     = 1  //客户端到服务端    客户端请求连接服务端
@@ -43,23 +45,66 @@ const (
     vAUTH              = 0 //Reserved	0	0	0	0
 )
 
-type FixedHeader [11]byte
+type FixedHeader struct {
+    TypeFlag byte
+    len      int64
+}
+
+func ReadFixedHeader(r io.Reader) (FixedHeader, int, error) {
+    fh := FixedHeader{}
+    buf := make([]byte, 1)
+    size := 0
+    n, err := r.Read(buf)
+    if err != nil {
+        return fh, n, err
+    }
+    fh.TypeFlag = buf[0]
+    size += n
+
+    v := VarInt{}
+    _, n2, err := v.LoadFromReader(r)
+    if err != nil {
+        if err != nil {
+            return fh, size + n2, err
+        }
+    }
+    fh.len = v.ToInt()
+
+    return fh, size + n2, nil
+}
+
+func WriteFixedHeader(w io.Writer, header FixedHeader) (int, error) {
+    size := 0
+    n1, err1 := w.Write([]byte{header.TypeFlag})
+    if err1 != nil {
+        return n1, err1
+    }
+    size += n1
+
+    v := VarInt{}
+    v.InitFromUInt64(uint64(header.len))
+
+    n2, err2 := w.Write(v.Bytes())
+    if err2 != nil {
+        return size + n2, err2
+    }
+    return size + n2, nil
+}
 
 func (h FixedHeader) Type() byte {
-    return h[0] >> 4
+    return h.TypeFlag >> 4
 }
 
 func (h FixedHeader) Flag() byte {
-    return h[0] & 0x0F
+    return h.TypeFlag & 0x0F
 }
 
 //return dup, QoS, retain
 func (h FixedHeader) PubFlag() (bool, uint8, bool) {
-    flag := h[0] & 0x0F
-    return flag >> 3 == 1, (flag & 0x6) >> 1, flag & 0x1 == 1
+    flag := h.TypeFlag & 0x0F
+    return flag>>3 == 1, (flag & 0x6) >> 1, flag&0x1 == 1
 }
 
-func (h FixedHeader) RemainLength() uint64 {
-    return DecodeVaruint(h[1:])
+func (h FixedHeader) RemainLength() int64 {
+    return h.len
 }
-

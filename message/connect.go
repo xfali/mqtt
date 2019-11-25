@@ -7,6 +7,7 @@
 package message
 
 import (
+    "io"
     "mqtt/container/binlist"
     "mqtt/packet"
 )
@@ -32,6 +33,11 @@ func init() {
 type ConnectMessage struct {
     fixedHeader packet.FixedHeader
     varHeader   []byte
+    props       []packet.Property
+}
+
+func (msg *ConnectMessage) Read(r io.Reader) {
+
 }
 
 func NewConnectMessage() *ConnectMessage {
