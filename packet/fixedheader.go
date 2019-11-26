@@ -47,7 +47,7 @@ const (
 
 type FixedHeader struct {
     TypeFlag byte
-    len      int64
+    Len      int64
 }
 
 func ReadFixedHeader(r io.Reader) (FixedHeader, int, error) {
@@ -68,7 +68,7 @@ func ReadFixedHeader(r io.Reader) (FixedHeader, int, error) {
             return fh, size + n2, err
         }
     }
-    fh.len = v.ToInt()
+    fh.Len = v.ToInt()
 
     return fh, size + n2, nil
 }
@@ -82,13 +82,20 @@ func WriteFixedHeader(w io.Writer, header FixedHeader) (int, error) {
     size += n1
 
     v := VarInt{}
-    v.InitFromUInt64(uint64(header.len))
+    v.InitFromUInt64(uint64(header.Len))
 
     n2, err2 := w.Write(v.Bytes())
     if err2 != nil {
         return size + n2, err2
     }
     return size + n2, nil
+}
+
+func CreateFixedHeader(t, f byte, len int64) FixedHeader {
+    return FixedHeader{
+        TypeFlag: (t << 4) | (f & 0x0F),
+        Len: len,
+    }
 }
 
 func (h FixedHeader) Type() byte {
@@ -106,5 +113,5 @@ func (h FixedHeader) PubFlag() (bool, uint8, bool) {
 }
 
 func (h FixedHeader) RemainLength() int64 {
-    return h.len
+    return h.Len
 }
