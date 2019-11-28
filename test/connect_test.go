@@ -18,6 +18,7 @@ func TestConnect(t *testing.T) {
     conn.SetUsername("test")
     conn.SetPassword([]byte("123"))
     conn.SetWillTopic("123")
+    conn.Count()
 
     t.Log("before")
     t.Log(conn)

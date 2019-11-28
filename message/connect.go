@@ -11,6 +11,7 @@ import (
     "mqtt/container/binlist"
     "mqtt/errcode"
     "mqtt/packet"
+    "mqtt/util"
 )
 
 const (
@@ -197,10 +198,20 @@ func (msg *ConnectMessage) WritePayload(w io.Writer) (int, error) {
 }
 
 func NewConnectMessage() *ConnectMessage {
-    ret := &ConnectMessage{}
+    ret := &ConnectMessage{
+        fixedHeader:    packet.CreateFixedHeader(packet.PktTypeCONNECT, packet.PktFlagCONNECT, 0),
+    }
     ret.varHeader.ProtocolName = packet.MqttProtocolNameString
     ret.varHeader.ProtocolVersion = packet.MqttProtocolVersion
     return ret
+}
+
+func (m *ConnectMessage) Count() int64 {
+    w := new(util.CountWriter)
+    m.WriteVarHeader(w)
+    m.WritePayload(w)
+    m.fixedHeader.Len = w.Count()
+    return m.fixedHeader.Len
 }
 
 func (m *ConnectMessage) SetWillQos(v byte) {
