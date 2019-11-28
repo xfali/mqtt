@@ -8,6 +8,7 @@ package packet
 
 import (
     "encoding/binary"
+    "fmt"
     "io"
     "mqtt/errcode"
 )
@@ -296,7 +297,7 @@ func (prop *ByteProperty) Get() interface{} {
     return prop.V
 }
 
-func (prop *ByteProperty)DataLen() int32 {
+func (prop *ByteProperty) DataLen() int32 {
     return 1
 }
 
@@ -420,7 +421,7 @@ func (prop *StringPairProperty) MarshalData(w io.Writer) (int, error) {
 }
 
 func FindPropValue(t int64, props []Property) interface{} {
-    for i := range  props {
+    for i := range props {
         if props[i].Id() == t {
             return props[i]
         }
@@ -428,8 +429,19 @@ func FindPropValue(t int64, props []Property) interface{} {
     return nil
 }
 
+//f return true, stop find
+func FindPropValues(t int64, props []Property, f func(Property) bool) {
+    for i := range props {
+        if props[i].Id() == t {
+            if f(props[i]) {
+                return
+            }
+        }
+    }
+}
+
 func FindAndSetPropValue(prop Property, props []Property) bool {
-    for i := range  props {
+    for i := range props {
         if props[i].Id() == prop.Id() {
             prop.Set(props[i].Get())
             return true
@@ -481,8 +493,8 @@ func ReadPropertyMap(r io.Reader) (map[int64]Property, int, error) {
 func WriteProperties(w io.Writer, props []Property) (int, error) {
     v := VarInt{}
     propLen := 0
-    for _, v := range props {
-        propLen += PROPERTY_DECHEX_SIZE + int(v.DataLen())
+    for _, p := range props {
+        propLen += PROPERTY_DECHEX_SIZE + int(p.DataLen())
     }
     v.InitFromUInt64(uint64(propLen))
     size := 0
@@ -529,3 +541,31 @@ func (p *PropMaximumPacketSize) Id() int64               { return MaximumPacketS
 func (p *PropWildcardSubscriptionAvailable) Id() int64   { return WildcardSubscriptionAvailable }
 func (p *PropSubscriptionIdentifierAvailable) Id() int64 { return SubscriptionIdentifierAvailable }
 func (p *PropSharedSubscriptionAvailable) Id() int64     { return SharedSubscriptionAvailable }
+
+func (p *PropPayloadFormatIndicator) String() string          { return fmt.Sprintf("PayloadFormatIndicator %v", p.V) }
+func (p *PropMessageExpiryInterval) String() string           { return fmt.Sprintf("MessageExpiryInterval %v", p.V) }
+func (p *PropContentType) String() string                     { return fmt.Sprintf("ContentType %v", p.V) }
+func (p *PropResponseTopic) String() string                   { return fmt.Sprintf("ResponseTopic %v", p.V) }
+func (p *PropCorrelationData) String() string                 { return fmt.Sprintf("CorrelationData %v", p.V) }
+func (p *PropSubscriptionIdentifier) String() string          { return fmt.Sprintf("SubscriptionIdentifier %v", p.V) }
+func (p *PropSessionExpiryInterval) String() string           { return fmt.Sprintf("SessionExpiryInterval %v", p.V) }
+func (p *PropAssignedClientIdentifier) String() string        { return fmt.Sprintf("AssignedClientIdentifier %v", p.V) }
+func (p *PropServerKeepAlive) String() string                 { return fmt.Sprintf("ServerKeepAlive %v", p.V) }
+func (p *PropAuthenticationMethod) String() string            { return fmt.Sprintf("AuthenticationMethod %v", p.V) }
+func (p *PropAuthenticationData) String() string              { return fmt.Sprintf("AuthenticationData %v", p.V) }
+func (p *PropRequestProblemInformation) String() string       { return fmt.Sprintf("RequestProblemInformation %v", p.V) }
+func (p *PropWillDelayInterval) String() string               { return fmt.Sprintf("WillDelayInterval %v", p.V) }
+func (p *PropRequestResponseInformation) String() string      { return fmt.Sprintf("RequestResponseInformation %v", p.V) }
+func (p *PropResponseInformation) String() string             { return fmt.Sprintf("ResponseInformation %v", p.V) }
+func (p *PropServerReference) String() string                 { return fmt.Sprintf("ServerReference %v", p.V) }
+func (p *PropReasonString) String() string                    { return fmt.Sprintf("ReasonString %v", p.V) }
+func (p *PropReceiveMaximum) String() string                  { return fmt.Sprintf("ReceiveMaximum %v", p.V) }
+func (p *PropTopicAliasMaximum) String() string               { return fmt.Sprintf("TopicAliasMaximum %v", p.V) }
+func (p *PropTopicAlias) String() string                      { return fmt.Sprintf("TopicAlias %v", p.V) }
+func (p *PropMaximumQoS) String() string                      { return fmt.Sprintf("MaximumQoS %v", p.V) }
+func (p *PropRetainAvailable) String() string                 { return fmt.Sprintf("RetainAvailable %v", p.V) }
+func (p *PropUserProperty) String() string                    { return fmt.Sprintf("UserProperty %s", p.V.String()) }
+func (p *PropMaximumPacketSize) String() string               { return fmt.Sprintf("MaximumPacketSize %v", p.V) }
+func (p *PropWildcardSubscriptionAvailable) String() string   { return fmt.Sprintf("WildcardSubscriptionAvailable %v", p.V) }
+func (p *PropSubscriptionIdentifierAvailable) String() string { return fmt.Sprintf("SubscriptionIdentifierAvailable %v", p.V) }
+func (p *PropSharedSubscriptionAvailable) String() string     { return fmt.Sprintf("SharedSubscriptionAvailable %v", p.V) }

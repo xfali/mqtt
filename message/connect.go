@@ -7,11 +7,13 @@
 package message
 
 import (
+    "fmt"
     "io"
     "mqtt/container/binlist"
     "mqtt/errcode"
     "mqtt/packet"
     "mqtt/util"
+    "strings"
 )
 
 const (
@@ -53,6 +55,29 @@ type ConnectMessage struct {
     fixedHeader packet.FixedHeader
     varHeader   ConnectVarHeader
     payload     ConnectPayload
+}
+
+func (v *ConnectVarHeader) String() string {
+    builder := strings.Builder{}
+    for i := range v.props {
+        builder.WriteString(fmt.Sprintf("%v\n", v.props[i]))
+    }
+    return fmt.Sprintf("protocal name: %s version: %d flag: %b keepAlive: %d \nprops: %s",
+        v.ProtocolName.String(), v.ProtocolVersion, v.Flag, v.KeepAlive, builder.String())
+}
+
+func (v *ConnectPayload) String() string {
+    builder := strings.Builder{}
+    for i := range v.WillProps {
+        builder.WriteString(fmt.Sprintf("%v\n", v.WillProps[i]))
+    }
+    return fmt.Sprintf("ClientId: %s WillTopic: %s WillPayload: %v Username: %s Password: %v \nprops: %s",
+        v.ClientId.String(), v.WillTopic.String(), v.WillPayload, v.Username.String(), v.Password, builder.String())
+}
+
+func (v *ConnectMessage) String() string {
+    return fmt.Sprintf("fixed header: %v, var header: %s, payload: %s",
+        v.fixedHeader, v.varHeader.String(), v.payload.String())
 }
 
 func (msg *ConnectMessage) ReadVariableHeader(r io.Reader) (int, error) {
@@ -262,8 +287,8 @@ func (m *ConnectMessage) SetWillTopic(v string) {
     m.payload.WillTopic.Reset(v)
 }
 
-func (m *ConnectMessage) SetWillMessage(v []byte) {
-
+func (m *ConnectMessage) SetWillPayload(v []byte) {
+    m.payload.WillPayload.Reset(v)
 }
 
 func (m *ConnectMessage) SetUsername(v string) {
@@ -324,7 +349,7 @@ func (m *ConnectMessage) SetUserProperty(props map[string]string) {
     for k, v := range props {
         p := &packet.PropUserProperty{}
         pair, err := packet.NewStringPair(k, v)
-        if err != nil {
+        if err == nil {
             p.V = pair
             m.varHeader.props = append(m.varHeader.props, p)
         }
@@ -349,66 +374,78 @@ func (m *ConnectMessage) SetAuthenticationData(v []byte) {
     }
 }
 
-func (m *ConnectMessage) GetSessionExpiryInterval() uint32 {
+func (m *ConnectMessage) GetSessionExpiryInterval() (uint32, bool) {
     p := packet.FindPropValue(packet.SessionExpiryInterval, m.varHeader.props).(*packet.PropSessionExpiryInterval)
-    return p.V
+    if p == nil {
+        return 0, false
+    }
+    return p.V, true
 }
 
-//func (m *ConnectMessage) GetReceiveMaximum() uint16 {
-//    p := &packet.PropReceiveMaximum{}
-//    p.V = v
-//    m.varHeader.props = append(m.varHeader.props, p)
-//}
-//
-//func (m *ConnectMessage) GetMaximumPacketSize() uint32 {
-//    p := &packet.PropMaximumPacketSize{}
-//    p.V = v
-//    m.varHeader.props = append(m.varHeader.props, p)
-//}
-//
-//func (m *ConnectMessage) GtTopicAliasMaximum() uint16 {
-//    p := &packet.PropTopicAliasMaximum{}
-//    p.V = v
-//    m.varHeader.props = append(m.varHeader.props, p)
-//}
-//
-//func (m *ConnectMessage) GetRequestResponseInformation() byte {
-//    p := &packet.PropRequestResponseInformation{}
-//    p.V = v
-//    m.varHeader.props = append(m.varHeader.props, p)
-//}
-//
-//func (m *ConnectMessage) GetRequestProblemInformation() byte {
-//    p := &packet.PropRequestProblemInformation{}
-//    p.V = v
-//    m.varHeader.props = append(m.varHeader.props, p)
-//}
-//
-//func (m *ConnectMessage) GetUserProperty() map[string]string {
-//    for k, v := range props {
-//        p := &packet.PropUserProperty{}
-//        pair, err := packet.NewStringPair(k, v)
-//        if err != nil {
-//            p.V = pair
-//            m.varHeader.props = append(m.varHeader.props, p)
-//        }
-//    }
-//}
-//
-//func (m *ConnectMessage) GetAuthenticationMethod() string {
-//    p := &packet.PropAuthenticationMethod{}
-//    s, err := packet.FromString(v)
-//    if err != nil {
-//        p.V = s
-//        m.varHeader.props = append(m.varHeader.props, p)
-//    }
-//}
-//
-//func (m *ConnectMessage) GetAuthenticationData() []byte {
-//    p := &packet.PropAuthenticationData{}
-//    s, err := packet.FromString(string(v))
-//    if err != nil {
-//        p.V = s
-//        m.varHeader.props = append(m.varHeader.props, p)
-//    }
-//}
+func (m *ConnectMessage) GetReceiveMaximum() (uint16, bool) {
+    p := packet.FindPropValue(packet.ReceiveMaximum, m.varHeader.props).(*packet.PropReceiveMaximum)
+    if p == nil {
+        return 0, false
+    }
+    return p.V, true
+}
+
+func (m *ConnectMessage) GetMaximumPacketSize() (uint32, bool) {
+    p := packet.FindPropValue(packet.MaximumPacketSize, m.varHeader.props).(*packet.PropMaximumPacketSize)
+    if p == nil {
+        return 0, false
+    }
+    return p.V, true
+}
+
+func (m *ConnectMessage) GtTopicAliasMaximum() (uint16, bool) {
+    p := packet.FindPropValue(packet.TopicAliasMaximum, m.varHeader.props).(*packet.PropTopicAliasMaximum)
+    if p == nil {
+        return 0, false
+    }
+    return p.V, true
+}
+
+func (m *ConnectMessage) GetRequestResponseInformation() (byte, bool) {
+    p := packet.FindPropValue(packet.RequestResponseInformation, m.varHeader.props).(*packet.PropRequestResponseInformation)
+    if p == nil {
+        return 0, false
+    }
+    return p.V, true
+}
+
+func (m *ConnectMessage) GetRequestProblemInformation() (byte, bool) {
+    p := packet.FindPropValue(packet.RequestProblemInformation, m.varHeader.props).(*packet.PropRequestProblemInformation)
+    if p == nil {
+        return 0, false
+    }
+    return p.V, true
+}
+
+func (m *ConnectMessage) GetUserProperty() (map[string]string, bool) {
+    ret := map[string]string{}
+    packet.FindPropValues(packet.UserProperty, m.varHeader.props, func(property packet.Property) bool {
+        p := property.(*packet.PropUserProperty)
+        if p != nil {
+            ret[p.V[0].String()] = p.V[1].String()
+        }
+        return false
+    })
+    return ret, len(ret) > 0
+}
+
+func (m *ConnectMessage) GetAuthenticationMethod() (string, bool) {
+    p := packet.FindPropValue(packet.AuthenticationMethod, m.varHeader.props).(*packet.PropAuthenticationMethod)
+    if p == nil {
+        return "", false
+    }
+    return p.V.String(), true
+}
+
+func (m *ConnectMessage) GetAuthenticationData() ([]byte, bool) {
+    p := packet.FindPropValue(packet.AuthenticationData, m.varHeader.props).(*packet.PropAuthenticationData)
+    if p == nil {
+        return nil, false
+    }
+    return []byte(p.V.String()), true
+}

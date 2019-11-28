@@ -163,6 +163,10 @@ func (s *String) AllLength() uint16 {
     return s.length + 2
 }
 
+func (s *StringPair) String() string {
+    return "[0]: " + s[0].String() + " [1]: " + s[1].String()
+}
+
 func (s *String) String() string {
     return string(s.data)
 }
