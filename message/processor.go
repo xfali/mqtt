@@ -14,13 +14,12 @@ import (
 
 type Creator func() Message
 
-func ConnectMessageCreator() Message {
-    ret := NewConnectMessage()
-    return ret
-}
+func ConnectMessageCreator() Message { return NewConnectMessage() }
+func ConnackMessageCreator() Message { return NewConnackMessage() }
 
 var creatorMap = map[byte]Creator{
     packet.PktTypeCONNECT: ConnectMessageCreator,
+    packet.PktTypeCONNACK: ConnackMessageCreator,
 }
 
 func ReadMessage(r io.Reader) (Message, int, error) {
@@ -46,7 +45,7 @@ func ReadMessage(r io.Reader) (Message, int, error) {
     n3, err3 := msg.ReadPayload(r)
     n += n3
 
-    if f.RemainLength() != int64(n2 + n3) {
+    if f.RemainLength() != int64(n2+n3) {
         return nil, n, errcode.MessageReadSizeNotMatch
     }
 

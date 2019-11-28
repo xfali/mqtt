@@ -9,30 +9,11 @@ package message
 import (
     "fmt"
     "io"
-    "mqtt/container/binlist"
     "mqtt/errcode"
     "mqtt/packet"
     "mqtt/util"
     "strings"
 )
-
-const (
-    ConnectMessageProtocolName  = "ProtocolName"
-    ConnectMessageProtocolLevel = "ProtocolLevel"
-    ConnectMessageConnectFlags  = "ConnectFlags"
-    ConnectMessageKeepAlive     = "KeepAlive"
-    ConnectMessageProperties    = "Properties"
-)
-
-var connectMessageVarHeaderMeta *binlist.BinMetaList
-
-//func init() {
-//    connectMessageVarHeaderMeta = binlist.NewMetaList()
-//    connectMessageVarHeaderMeta.Put(ConnectMessageProtocolName, 0, 6)
-//    connectMessageVarHeaderMeta.Put(ConnectMessageProtocolLevel, 6, 1)
-//    connectMessageVarHeaderMeta.Put(ConnectMessageConnectFlags, 7, 1)
-//    connectMessageVarHeaderMeta.Put(ConnectMessageKeepAlive, 8, 2)
-//}
 
 type ConnectVarHeader struct {
     ProtocolName    packet.String
@@ -304,22 +285,49 @@ func (m *ConnectMessage) SetSessionExpiryInterval(v uint32) {
     m.varHeader.props = append(m.varHeader.props, p)
 }
 
+//双字节整数表示的最大接收值
 func (m *ConnectMessage) SetReceiveMaximum(v uint16) {
     p := &packet.PropReceiveMaximum{}
     p.V = v
     m.varHeader.props = append(m.varHeader.props, p)
 }
 
+//四字节整数表示的服务端愿意接收的最大报文长度（Maximum Packet Size）。
+//如果没有设置最大报文长度，则按照协议由固定报头中的剩余长度可编码最大值和协议报头对数据包的大小做限制。
 func (m *ConnectMessage) SetMaximumPacketSize(v uint32) {
     p := &packet.PropMaximumPacketSize{}
     p.V = v
     m.varHeader.props = append(m.varHeader.props, p)
 }
 
+//四字节整数表示的服务端愿意接收的最大报文长度（Maximum Packet Size）。
+//如果没有设置最大报文长度，则按照协议由固定报头中的剩余长度可编码最大值和协议报头对数据包的大小做限制。
+func (m *ConnectMessage) GetMaximumPacketSize() (uint32, bool) {
+    p := packet.FindPropValue(packet.MaximumPacketSize, m.varHeader.props)
+    if p == nil {
+        return 0, false
+    }
+    return p.(*packet.PropMaximumPacketSize).V, true
+}
+
+//双字节整数表示的主题别名最大值（Topic Alias Maximum）。
+// 包含多个主题别名最大值（Topic Alias Maximum）将造成协议错误（Protocol Error）。
+// 没有设置主题别名最大值属性的情况下，主题别名最大值默认为零。
 func (m *ConnectMessage) SetTopicAliasMaximum(v uint16) {
     p := &packet.PropTopicAliasMaximum{}
     p.V = v
     m.varHeader.props = append(m.varHeader.props, p)
+}
+
+//双字节整数表示的主题别名最大值（Topic Alias Maximum）。
+// 包含多个主题别名最大值（Topic Alias Maximum）将造成协议错误（Protocol Error）。
+// 没有设置主题别名最大值属性的情况下，主题别名最大值默认为零。
+func (m *ConnectMessage) GetTopicAliasMaximum() (uint16, bool) {
+    p := packet.FindPropValue(packet.TopicAliasMaximum, m.varHeader.props)
+    if p == nil {
+        return 0, false
+    }
+    return p.(*packet.PropTopicAliasMaximum).V, true
 }
 
 func (m *ConnectMessage) SetRequestResponseInformation(v byte) {
@@ -334,6 +342,8 @@ func (m *ConnectMessage) SetRequestProblemInformation(v byte) {
     m.varHeader.props = append(m.varHeader.props, p)
 }
 
+//跟随其后的是UTF-8字符串对。此属性可用于向客户端提供包括诊断信息在内的附加信息。
+//如果加上用户属性之后的CONNACK报文长度超出了客户端指定的最大报文长度，则服务端不能发送此属性
 func (m *ConnectMessage) SetUserProperty(props map[string]string) {
     for k, v := range props {
         p := &packet.PropUserProperty{}
@@ -345,6 +355,22 @@ func (m *ConnectMessage) SetUserProperty(props map[string]string) {
     }
 }
 
+//跟随其后的是UTF-8字符串对。此属性可用于向客户端提供包括诊断信息在内的附加信息。
+//如果加上用户属性之后的CONNACK报文长度超出了客户端指定的最大报文长度，则服务端不能发送此属性
+func (m *ConnectMessage) GetUserProperty() (map[string]string, bool) {
+    ret := map[string]string{}
+    packet.FindPropValues(packet.UserProperty, m.varHeader.props, func(property packet.Property) bool {
+        if property != nil {
+            p := property.(*packet.PropUserProperty)
+            ret[p.V[0].String()] = p.V[1].String()
+        }
+        return false
+    })
+    return ret, len(ret) > 0
+}
+
+//以UTF-8编码的字符串，包含了认证方法（Authentication Method）名。
+//包含多个认证方法将造成协议错误（Protocol Error）。
 func (m *ConnectMessage) SetAuthenticationMethod(v string) {
     p := &packet.PropAuthenticationMethod{}
     s, err := packet.FromString(v)
@@ -354,6 +380,18 @@ func (m *ConnectMessage) SetAuthenticationMethod(v string) {
     }
 }
 
+//以UTF-8编码的字符串，包含了认证方法（Authentication Method）名。
+//包含多个认证方法将造成协议错误（Protocol Error）。
+func (m *ConnectMessage) GetAuthenticationMethod() (string, bool) {
+    p := packet.FindPropValue(packet.AuthenticationMethod, m.varHeader.props)
+    if p == nil {
+        return "", false
+    }
+    return p.(*packet.PropAuthenticationMethod).V.String(), true
+}
+
+//包含认证数据（Authentication Data）的二进制数据。此数据的内容由认证方法和已交换的认证数据状态定义。
+//包含多个认证数据将造成协议错误（Protocol Error）。
 func (m *ConnectMessage) SetAuthenticationData(v []byte) {
     p := &packet.PropAuthenticationData{}
     s, err := packet.FromString(string(v))
@@ -361,6 +399,16 @@ func (m *ConnectMessage) SetAuthenticationData(v []byte) {
         p.V = s
         m.varHeader.props = append(m.varHeader.props, p)
     }
+}
+
+//包含认证数据（Authentication Data）的二进制数据。此数据的内容由认证方法和已交换的认证数据状态定义。
+//包含多个认证数据将造成协议错误（Protocol Error）。
+func (m *ConnectMessage) GetAuthenticationData() ([]byte, bool) {
+    p := packet.FindPropValue(packet.AuthenticationData, m.varHeader.props)
+    if p == nil {
+        return nil, false
+    }
+    return []byte(p.(*packet.PropAuthenticationData).V.String()), true
 }
 
 func (m *ConnectMessage) GetSessionExpiryInterval() (uint32, bool) {
@@ -379,22 +427,6 @@ func (m *ConnectMessage) GetReceiveMaximum() (uint16, bool) {
     return p.(*packet.PropReceiveMaximum).V, true
 }
 
-func (m *ConnectMessage) GetMaximumPacketSize() (uint32, bool) {
-    p := packet.FindPropValue(packet.MaximumPacketSize, m.varHeader.props)
-    if p == nil {
-        return 0, false
-    }
-    return p.(*packet.PropMaximumPacketSize).V, true
-}
-
-func (m *ConnectMessage) GtTopicAliasMaximum() (uint16, bool) {
-    p := packet.FindPropValue(packet.TopicAliasMaximum, m.varHeader.props)
-    if p == nil {
-        return 0, false
-    }
-    return p.(*packet.PropTopicAliasMaximum).V, true
-}
-
 func (m *ConnectMessage) GetRequestResponseInformation() (byte, bool) {
     p := packet.FindPropValue(packet.RequestResponseInformation, m.varHeader.props)
     if p == nil {
@@ -409,34 +441,6 @@ func (m *ConnectMessage) GetRequestProblemInformation() (byte, bool) {
         return 0, false
     }
     return p.(*packet.PropRequestProblemInformation).V, true
-}
-
-func (m *ConnectMessage) GetUserProperty() (map[string]string, bool) {
-    ret := map[string]string{}
-    packet.FindPropValues(packet.UserProperty, m.varHeader.props, func(property packet.Property) bool {
-        if property != nil {
-            p := property.(*packet.PropUserProperty)
-            ret[p.V[0].String()] = p.V[1].String()
-        }
-        return false
-    })
-    return ret, len(ret) > 0
-}
-
-func (m *ConnectMessage) GetAuthenticationMethod() (string, bool) {
-    p := packet.FindPropValue(packet.AuthenticationMethod, m.varHeader.props)
-    if p == nil {
-        return "", false
-    }
-    return p.(*packet.PropAuthenticationMethod).V.String(), true
-}
-
-func (m *ConnectMessage) GetAuthenticationData() ([]byte, bool) {
-    p := packet.FindPropValue(packet.AuthenticationData, m.varHeader.props)
-    if p == nil {
-        return nil, false
-    }
-    return []byte(p.(*packet.PropAuthenticationData).V.String()), true
 }
 
 func (m *ConnectMessage) SetWillDelayInterval(v uint32) {
