@@ -12,19 +12,19 @@ import (
     "testing"
 )
 
-func TestConnect(t *testing.T) {
+func TestConnect1(t *testing.T) {
     conn := message.NewConnectMessage()
     conn.SetWillEnable(true)
     conn.SetUsername("test")
     conn.SetPassword([]byte("123"))
     conn.SetWillTopic("123")
-    conn.Count()
+    conn.GetFixedHeader()
 
     t.Log("before")
     t.Log(conn)
 
     buf := bytes.NewBuffer(nil)
-    n, e := conn.WriteVarHeader(buf)
+    n, e := conn.WriteVariableHeader(buf)
     if e != nil {
         t.Fatal(e)
     }
@@ -34,7 +34,7 @@ func TestConnect(t *testing.T) {
     }
 
     conn2 := message.NewConnectMessage()
-    n3, e3 := conn2.ReadVarHeader(buf)
+    n3, e3 := conn2.ReadVariableHeader(buf)
     if e3 != nil {
         t.Fatal(e3)
     }
@@ -44,6 +44,36 @@ func TestConnect(t *testing.T) {
     }
 
     if n + n2 != n3 + n4 {
+        t.Fatal("not match")
+    }
+
+    t.Log("after")
+    t.Log(conn2)
+}
+
+func TestConnect2(t *testing.T) {
+    conn := message.NewConnectMessage()
+    conn.SetWillEnable(true)
+    conn.SetUsername("test")
+    conn.SetPassword([]byte("123"))
+    conn.SetWillTopic("123")
+    conn.GetFixedHeader()
+
+    t.Log("before")
+    t.Log(conn)
+
+    buf := bytes.NewBuffer(nil)
+    n, err := message.WriteMessage(buf, conn)
+    if err != nil {
+        t.Fatal(err)
+    }
+
+    conn2, n2, err2 := message.ReadMessage(buf)
+    if err2 != nil {
+        t.Fatal(err2)
+    }
+
+    if n != n2 {
         t.Fatal("not match")
     }
 

@@ -55,7 +55,7 @@ type ConnectMessage struct {
     payload     ConnectPayload
 }
 
-func (msg *ConnectMessage) ReadVarHeader(r io.Reader) (int, error) {
+func (msg *ConnectMessage) ReadVariableHeader(r io.Reader) (int, error) {
     s, n, err := packet.ParseString(r)
     if err != nil {
         return n, err
@@ -82,7 +82,7 @@ func (msg *ConnectMessage) ReadVarHeader(r io.Reader) (int, error) {
     return n + n2 + n3, nil
 }
 
-func (msg *ConnectMessage) WriteVarHeader(w io.Writer) (int, error) {
+func (msg *ConnectMessage) WriteVariableHeader(w io.Writer) (int, error) {
     n, err := packet.WriteString(w, msg.varHeader.ProtocolName)
     if err != nil {
         return n, err
@@ -199,19 +199,23 @@ func (msg *ConnectMessage) WritePayload(w io.Writer) (int, error) {
 
 func NewConnectMessage() *ConnectMessage {
     ret := &ConnectMessage{
-        fixedHeader:    packet.CreateFixedHeader(packet.PktTypeCONNECT, packet.PktFlagCONNECT, 0),
+        fixedHeader: packet.CreateFixedHeader(packet.PktTypeCONNECT, packet.PktFlagCONNECT, 0),
     }
     ret.varHeader.ProtocolName = packet.MqttProtocolNameString
     ret.varHeader.ProtocolVersion = packet.MqttProtocolVersion
     return ret
 }
 
-func (m *ConnectMessage) Count() int64 {
+func (m *ConnectMessage) SetFixedHeader(header packet.FixedHeader) {
+    m.fixedHeader = header
+}
+
+func (m *ConnectMessage) GetFixedHeader() packet.FixedHeader {
     w := new(util.CountWriter)
-    m.WriteVarHeader(w)
+    m.WriteVariableHeader(w)
     m.WritePayload(w)
     m.fixedHeader.Len = w.Count()
-    return m.fixedHeader.Len
+    return m.fixedHeader
 }
 
 func (m *ConnectMessage) SetWillQos(v byte) {
