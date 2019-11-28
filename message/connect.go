@@ -485,6 +485,9 @@ func (m *ConnectMessage) GetMessageExpiryInterval() (uint32, bool) {
     return p.(*packet.PropMessageExpiryInterval).V, true
 }
 
+//用来描述应用消息的内容。
+//包含多个内容类型将造成协议错误（Protocol Error）。
+//内容类型的值由发送应用程序和接收应用程序确定。
 func (m *ConnectMessage) SetContentType(v string) {
     p := &packet.PropContentType{}
     s, err := packet.FromString(v)
@@ -494,6 +497,9 @@ func (m *ConnectMessage) SetContentType(v string) {
     }
 }
 
+//用来描述应用消息的内容。
+//包含多个内容类型将造成协议错误（Protocol Error）。
+//内容类型的值由发送应用程序和接收应用程序确定。
 func (m *ConnectMessage) GetContentType() (string, bool) {
     p := packet.FindPropValue(packet.ContentType, m.payload.WillProps)
     if p == nil {
@@ -519,6 +525,8 @@ func (m *ConnectMessage) GetResponseTopic() (string, bool) {
     return p.(*packet.PropResponseTopic).V.String(), true
 }
 
+//对比数据被请求消息发送端在收到响应消息时用来标识相应的请求。包含多个对比数据将造成协议错误（Protocol Error）。
+//如果没有设置对比数据，则请求方（Requester）不需要任何对比数据。
 func (m *ConnectMessage) SetCorrelationData(v []byte) {
     p := &packet.PropCorrelationData{}
     s, err := packet.FromString(string(v))
@@ -528,6 +536,8 @@ func (m *ConnectMessage) SetCorrelationData(v []byte) {
     }
 }
 
+//对比数据被请求消息发送端在收到响应消息时用来标识相应的请求。包含多个对比数据将造成协议错误（Protocol Error）。
+//如果没有设置对比数据，则请求方（Requester）不需要任何对比数据。
 func (m *ConnectMessage) GetCorrelationData() ([]byte, bool) {
     p := packet.FindPropValue(packet.CorrelationData, m.payload.WillProps)
     if p == nil {

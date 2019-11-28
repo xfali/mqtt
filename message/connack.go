@@ -88,6 +88,22 @@ func (msg *ConnackMessage) WritePayload(w io.Writer) (int, error) {
     return 0, nil
 }
 
+func (m *ConnackMessage) SetAckFlag(v byte) {
+    m.varHeader.AckFlag = v
+}
+
+func (m *ConnackMessage) GetAckFlag() byte{
+    return m.varHeader.AckFlag
+}
+
+func (m *ConnackMessage) SetReasonCode(v byte) {
+    m.varHeader.ReasonCode = v
+}
+
+func (m *ConnackMessage) GetReasonCode() byte{
+    return m.varHeader.ReasonCode
+}
+
 // 会话过期间隔 Session Expiry Interval,四字节整数表示的以秒为单位的会话过期间隔
 func (m *ConnackMessage) SetSessionExpiryInterval(v uint32) {
     p := &packet.PropSessionExpiryInterval{}
@@ -130,7 +146,7 @@ func (m *ConnackMessage) SetMaximumQoS(v byte) {
 
 //用一个字节表示的0或1。包含多个最大服务质量（Maximum QoS）或最大服务质量既不为0也不为1将造成协议错误。
 // 如果没有设置最大服务质量，客户端可使用最大QoS为2。
-func (m *ConnackMessage) GetMaximumQo() (byte, bool) {
+func (m *ConnackMessage) GetMaximumQoS() (byte, bool) {
     p := packet.FindPropValue(packet.MaximumQoS, m.varHeader.props)
     if p == nil {
         return 0, false

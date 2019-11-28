@@ -94,7 +94,7 @@ func WriteFixedHeader(w io.Writer, header FixedHeader) (int, error) {
 func CreateFixedHeader(t, f byte, len int64) FixedHeader {
     return FixedHeader{
         TypeFlag: (t << 4) | (f & 0x0F),
-        Len: len,
+        Len:      len,
     }
 }
 
@@ -110,6 +110,28 @@ func (h FixedHeader) Flag() byte {
 func (h FixedHeader) PubFlag() (bool, uint8, bool) {
     flag := h.TypeFlag & 0x0F
     return flag>>3 == 1, (flag & 0x6) >> 1, flag&0x1 == 1
+}
+
+func (h *FixedHeader) SetDup(v bool) {
+    if v {
+        h.TypeFlag |= 1 << 3
+    } else {
+        h.TypeFlag &= 0xFF & ^(1 << 3)
+    }
+}
+
+func (h *FixedHeader) SetQos(v byte) {
+    v &= 0x3
+    h.TypeFlag &= 0xFF & ^(0x3 << 1)
+    h.TypeFlag |= v << 1
+}
+
+func (h *FixedHeader) SetRetain(v bool) {
+    if v {
+        h.TypeFlag |= 1
+    } else {
+        h.TypeFlag &= 0xFF & ^1
+    }
 }
 
 func (h FixedHeader) RemainLength() int64 {

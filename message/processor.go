@@ -16,10 +16,12 @@ type Creator func() Message
 
 func ConnectMessageCreator() Message { return NewConnectMessage() }
 func ConnackMessageCreator() Message { return NewConnackMessage() }
+func PublishMessageCreator() Message { return NewPublishMessage() }
 
 var creatorMap = map[byte]Creator{
     packet.PktTypeCONNECT: ConnectMessageCreator,
     packet.PktTypeCONNACK: ConnackMessageCreator,
+    packet.PktTypePUBLISH: PublishMessageCreator,
 }
 
 func ReadMessage(r io.Reader) (Message, int, error) {
