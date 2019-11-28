@@ -12,9 +12,6 @@ import (
     "mqtt/errcode"
 )
 
-//4 - MQTT
-var MqttString = []byte{0, 4, 77, 81, 84, 84}
-
 type String struct {
     length uint16
     data   []byte
@@ -72,6 +69,10 @@ func EncodeString(w io.Writer, s string) (int, error) {
     return n + n2, nil
 }
 
+func WriteBytes(w io.Writer, s Bytes) (int, error) {
+    return WriteString(w, String(s))
+}
+
 func WriteString(w io.Writer, s String) (int, error) {
     b := make([]byte, 2)
     l := s.length
@@ -87,6 +88,11 @@ func WriteString(w io.Writer, s String) (int, error) {
     }
 
     return n + n2, nil
+}
+
+func ParseBytes(r io.Reader) (ret *Bytes, n int, err error) {
+    s, n, e := ParseString(r)
+    return (*Bytes)(s), n, e
 }
 
 func ParseString(r io.Reader) (ret *String, n int, err error) {
@@ -114,6 +120,24 @@ func ParseString(r io.Reader) (ret *String, n int, err error) {
     readSize += n
 
     return &String{length: size, data: buf}, readSize, nil
+}
+
+func (s *Bytes) Reset(v []byte) error {
+    if len(v) > math.MaxUint16 {
+        return errcode.StringOutOfRange
+    }
+    s.length = uint16(len(v))
+    s.data = v
+    return nil
+}
+
+func (s *String) Reset(v string) error {
+    if len(v) > math.MaxUint16 {
+        return errcode.StringOutOfRange
+    }
+    s.length = uint16(len(v))
+    s.data = []byte(v)
+    return nil
 }
 
 func (s *String) Length() uint16 {
