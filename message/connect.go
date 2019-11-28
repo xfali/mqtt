@@ -91,7 +91,7 @@ func (msg *ConnectMessage) ReadPayload(r io.Reader) (int, error) {
         return n, err
     }
     msg.payload.ClientId = *s
-    if msg.GetWillEnable() {
+    if msg.IsWillEnable() {
         props, n2, err2 := packet.ReadProperties(r)
         n += n2
         if err2 != nil {
@@ -141,7 +141,7 @@ func (msg *ConnectMessage) WritePayload(w io.Writer) (int, error) {
         return n, err
     }
 
-    if msg.GetWillEnable() {
+    if msg.IsWillEnable() {
         n2, err2 := packet.WriteProperties(w, msg.payload.WillProps)
         n += n2
         if err2 != nil {
@@ -201,6 +201,9 @@ func (m *ConnectMessage) GetFixedHeader() packet.FixedHeader {
     return m.fixedHeader
 }
 
+//如果遗嘱标志（Will Flag）设置为0，遗嘱服务质量（Will QoS）必须也设置为0（0x00）
+//如果遗嘱标志设置为1，遗嘱服务质量可以被设置为0（0x00），1（0x01）或2（0x02）
+//设置为3（0x03）的报文是无效报文。
 func (m *ConnectMessage) SetWillQos(v byte) {
     m.varHeader.Flag |= (v & 0x3) << 3
 }
@@ -209,6 +212,7 @@ func (m *ConnectMessage) SetVersion(v byte) {
     m.varHeader.ProtocolVersion = v
 }
 
+//二进制位表明此次连接是一个新的会话还是一个已存在的会话的延续。
 func (m *ConnectMessage) SetCleanStart(v bool) {
     if v {
         m.varHeader.Flag |= 1 << 1
@@ -217,6 +221,11 @@ func (m *ConnectMessage) SetCleanStart(v bool) {
     }
 }
 
+func (m *ConnectMessage) IsCleanStart() bool{
+    return (m.varHeader.Flag) >> 1 & 0xFE != 0
+}
+
+//如果遗嘱标志（Will Flag）被设置为1，表示遗嘱消息必须已存储在服务端与此客户标识符相关的会话中
 func (m *ConnectMessage) SetWillEnable(v bool) {
     if v {
         m.varHeader.Flag |= 1 << 2
@@ -225,7 +234,7 @@ func (m *ConnectMessage) SetWillEnable(v bool) {
     }
 }
 
-func (m *ConnectMessage) GetWillEnable() bool {
+func (m *ConnectMessage) IsWillEnable() bool {
     return int(m.varHeader.Flag) & ^(1 << 2) != 0
 }
 
@@ -237,10 +246,13 @@ func (m *ConnectMessage) GetClientId() string {
     return m.payload.ClientId.String()
 }
 
+//保持连接（Keep Alive）使用双字节整数来表示以秒为单位的时间间隔。
+//它是指在客户端传输完成一个MQTT控制报文的时刻到发送下一个报文的时刻，两者之间允许空闲的最大时间间隔。
 func (m *ConnectMessage) SetKeepAlive(v uint16) {
     m.varHeader.KeepAlive = v
 }
 
+//此位指定遗嘱消息（Will Message）在发布时是否会被保留。
 func (m *ConnectMessage) SetWillRetain(v bool) {
     m.varHeader.Flag |= 1 << 5
 }
@@ -253,6 +265,8 @@ func (m *ConnectMessage) SetWillPayload(v []byte) {
     m.payload.WillPayload.Reset(v)
 }
 
+//如果用户名标志（User Name Flag）被设置为0，有效载荷中不能包含用户名字段。
+//如果用户名标志被设置为1，有效载荷中必须包含用户名字段。
 func (m *ConnectMessage) SetUsername(v string) {
     m.varHeader.Flag |= 1 << 7
     m.payload.Username.Reset(v)
@@ -266,6 +280,8 @@ func (m *ConnectMessage) haveUsername() bool {
     return int(m.varHeader.Flag) & ^(1 << 7) != 0
 }
 
+//如果密码标志（Password Flag）被设置为0，有效载荷中不能包含密码字段 [MQTT-3.1.2-18]。
+//如果密码标志被设置为1，有效载荷中必须包含密码字段 [MQTT-3.1.2-19]。
 func (m *ConnectMessage) SetPassword(v []byte) {
     m.varHeader.Flag |= 1 << 6
     m.payload.Password.Reset(v)
@@ -567,6 +583,10 @@ func (m *ConnectMessage) GetPayloadUserProperty() (map[string]string, bool) {
         return false
     })
     return ret, len(ret) > 0
+}
+
+func (m *ConnectMessage) Valid() bool {
+    return true
 }
 
 func (v *ConnectVarHeader) String() string {

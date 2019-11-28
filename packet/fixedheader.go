@@ -6,7 +6,10 @@
 
 package packet
 
-import "io"
+import (
+    "io"
+    "mqtt/errcode"
+)
 
 const (
     PktTypeReserved    = 0  //禁止    保留
@@ -100,6 +103,14 @@ func CreateFixedHeader(t, f byte, len int64) FixedHeader {
 
 func (h FixedHeader) Type() byte {
     return h.TypeFlag >> 4
+}
+
+func (h *FixedHeader) CheckLen(n int) error {
+    if h.Len >= int64(n) {
+        return nil
+    } else {
+        return errcode.ProtocolError
+    }
 }
 
 func (h FixedHeader) Flag() byte {

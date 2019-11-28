@@ -12,6 +12,7 @@ import (
 )
 
 type Message interface {
+    Valid() bool
     SetFixedHeader(header packet.FixedHeader)
     GetFixedHeader() packet.FixedHeader
     ReadVariableHeader(r io.Reader) (int, error)

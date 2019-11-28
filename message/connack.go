@@ -440,6 +440,10 @@ func (m *ConnackMessage) GetAuthenticationData() ([]byte, bool) {
     return []byte(p.(*packet.PropAuthenticationData).V.String()), true
 }
 
+func (m *ConnackMessage) Valid() bool {
+    return true
+}
+
 func (v *ConnackVarHeader) String() string {
     builder := strings.Builder{}
     for i := range v.props {

@@ -8,9 +8,11 @@ package message
 
 import (
     "bytes"
+    "fmt"
     "io"
     "mqtt/packet"
     "mqtt/util"
+    "strings"
 )
 
 const (
@@ -351,4 +353,22 @@ func (m *PublishMessage) SetPayload(v []byte) {
 
 func (m *PublishMessage) GetPayload() []byte {
     return m.payload
+}
+
+func (m *PublishMessage) Valid() bool {
+    return true
+}
+
+func (v *PublishVarHeader) String() string {
+    builder := strings.Builder{}
+    for i := range v.props {
+        builder.WriteString(fmt.Sprintf("\t%v\n", v.props[i]))
+    }
+    return fmt.Sprintf("TopicName: %s ReasonCode: %d \nprops:\n%s",
+        v.TopicName.String(), v.PacketIdentifier, builder.String())
+}
+
+func (v *PublishMessage) String() string {
+    return fmt.Sprintf("fixed header: \n%v\nvar header:\n%s payload:\n %s\n",
+        v.fixedHeader, v.varHeader.String(), string(v.payload))
 }
