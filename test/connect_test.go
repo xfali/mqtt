@@ -58,8 +58,9 @@ func TestConnect2(t *testing.T) {
     conn.SetPassword([]byte("123"))
     conn.SetWillTopic("/d12t13/t43uyh/45eu/65eiu/45u34y34syhg/eg435wuyherg345syh")
     conn.SetSessionExpiryInterval(100)
-    conn.SetClientId("fasfasfasc3tgergsgsdgsdgds")
+    conn.SetCorrelationData([]byte("fasfasfasc3tgergsgsdgsdgds"))
     conn.SetWillPayload([]byte("fasfascxasfs"))
+    conn.SetContentType("fjlasjflkjaskflasjfkl")
     conn.SetAuthenticationData([]byte("fdg23y3h54uh564u3yhjhfxju54u"))
     conn.SetUserProperty(map[string]string{
         "test1": "1234567890qwertyuiopasdfghjklzxcvbnm",
@@ -67,6 +68,14 @@ func TestConnect2(t *testing.T) {
         "test3": "1234567890qwertyuiopasdfghjklzxcvbnm",
         "test4": "1234567890qwertyuiopasdfghjklzxcvbnm",
     })
+    conn.SetPayloadUserProperty(map[string]string{
+        "test1": "1234567890qwertyuiopasdfghjklzxcvbnm",
+        "test2": "1234567890qwertyuiopasdfghjklzxcvbnm",
+        "test3": "1234567890qwertyuiopasdfghjklzxcvbnm",
+        "test4": "1234567890qwertyuiopasdfghjklzxcvbnm",
+    })
+    conn.SetWillDelayInterval(100)
+    conn.SetContentType("json")
     conn.GetFixedHeader()
 
     t.Log("before")
@@ -89,4 +98,6 @@ func TestConnect2(t *testing.T) {
 
     t.Log("after")
     t.Log(conn2)
+
+    t.Log(conn2.(*message.ConnectMessage).GetCorrelationData())
 }

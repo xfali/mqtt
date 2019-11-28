@@ -146,6 +146,10 @@ func (s *Bytes) Reset(v []byte) error {
     return nil
 }
 
+func (s *Bytes) Get() []byte {
+    return s.data
+}
+
 func (s *String) Reset(v string) error {
     if len(v) > math.MaxUint16 {
         return errcode.StringOutOfRange
