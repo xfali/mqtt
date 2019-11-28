@@ -7,7 +7,6 @@
 package packet
 
 import (
-    "bytes"
     "encoding/binary"
     "io"
     "mqtt/errcode"
@@ -420,137 +419,23 @@ func (prop *StringPairProperty) MarshalData(w io.Writer) (int, error) {
     return n1 + n2, err
 }
 
-type PropOpt func(io.Writer) error
-
-func BuildProperty(w io.Writer, opts ...PropOpt) (err error) {
-    buf := bytes.NewBuffer(make([]byte, 1024))
-    for _, opt := range opts {
-        err = opt(buf)
-        if err != nil {
-            return err
-        }
-    }
-    length := buf.Len()
-    data := buf.Bytes()
-    varBuf := make([]byte, MaxVarUintBufSize)
-    n := EncodeVaruint(varBuf, uint64(length))
-    _, err = w.Write(varBuf[:n])
-    if err != nil {
-        return err
-    }
-    _, err = w.Write(data)
-    return
-}
-
-func SetSessionExpiryInterval(v uint32) PropOpt {
-    return func(w io.Writer) error {
-        b := make([]byte, 5)
-        b[0] = SessionExpiryInterval
-        binary.BigEndian.PutUint32(b[1:], v)
-        _, err := w.Write(b)
-        return err
-    }
-}
-
-func SetReceiveMaximum(v uint16) PropOpt {
-    return func(w io.Writer) error {
-        b := make([]byte, 3)
-        b[0] = ReceiveMaximum
-        binary.BigEndian.PutUint16(b[1:], v)
-        _, err := w.Write(b)
-        return err
-    }
-}
-
-func SetMaximumPacketSize(v uint32) PropOpt {
-    return func(w io.Writer) error {
-        b := make([]byte, 5)
-        b[0] = MaximumPacketSize
-        binary.BigEndian.PutUint32(b[1:], v)
-        _, err := w.Write(b)
-        return err
-    }
-}
-
-func SetTopicAliasMaximum(v uint16) PropOpt {
-    return func(w io.Writer) error {
-        b := make([]byte, 3)
-        b[0] = TopicAliasMaximum
-        binary.BigEndian.PutUint16(b[1:], v)
-        _, err := w.Write(b)
-        return err
-    }
-}
-
-func SetRequestResponseInformation(v byte) PropOpt {
-    return func(w io.Writer) error {
-        b := make([]byte, 2)
-        b[0] = RequestResponseInformation
-        b[1] = v
-        _, err := w.Write(b)
-        return err
-    }
-}
-
-func SetRequestProblemInformation(v byte) PropOpt {
-    return func(w io.Writer) error {
-        b := make([]byte, 2)
-        b[0] = RequestProblemInformation
-        b[1] = v
-        _, err := w.Write(b)
-        return err
-    }
-}
-
-func SetUserProperty(v map[string]string) PropOpt {
-    return func(w io.Writer) error {
-        _, err := w.Write([]byte{UserProperty})
-        if err != nil {
-            return err
-        }
-        for k, v := range v {
-            _, err1 := EncodeString(w, k)
-            if err1 != nil {
-                return err1
-            }
-            _, err2 := EncodeString(w, v)
-            if err2 != nil {
-                return err2
-            }
-        }
-        return nil
-    }
-}
-
-func SetAuthenticationMethod(v string) PropOpt {
-    return func(w io.Writer) error {
-        _, err := w.Write([]byte{AuthenticationMethod})
-        if err != nil {
-            return err
-        }
-        _, err1 := EncodeString(w, v)
-        return err1
-    }
-}
-
-func SetAuthenticationData(v []byte) PropOpt {
-    return func(w io.Writer) error {
-        _, err := w.Write([]byte{AuthenticationData})
-        if err != nil {
-            return err
-        }
-        _, err1 := w.Write(v)
-        return err1
-    }
-}
-
-func GetPropValue(t int64, props []Property) interface{} {
+func FindPropValue(t int64, props []Property) interface{} {
     for i := range  props {
         if props[i].Id() == t {
-            return props[i].Get()
+            return props[i]
         }
     }
     return nil
+}
+
+func FindAndSetPropValue(prop Property, props []Property) bool {
+    for i := range  props {
+        if props[i].Id() == prop.Id() {
+            prop.Set(props[i].Get())
+            return true
+        }
+    }
+    return false
 }
 
 func ReadProperties(r io.Reader) ([]Property, int, error) {

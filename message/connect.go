@@ -283,3 +283,132 @@ func (m *ConnectMessage) SetPassword(v []byte) {
 func (m *ConnectMessage) havePassword() bool {
     return int(m.varHeader.Flag) & ^(1 << 6) != 0
 }
+
+func (m *ConnectMessage) SetSessionExpiryInterval(v uint32) {
+    p := &packet.PropSessionExpiryInterval{}
+    p.V = v
+    m.varHeader.props = append(m.varHeader.props, p)
+}
+
+func (m *ConnectMessage) SetReceiveMaximum(v uint16) {
+    p := &packet.PropReceiveMaximum{}
+    p.V = v
+    m.varHeader.props = append(m.varHeader.props, p)
+}
+
+func (m *ConnectMessage) SetMaximumPacketSize(v uint32) {
+    p := &packet.PropMaximumPacketSize{}
+    p.V = v
+    m.varHeader.props = append(m.varHeader.props, p)
+}
+
+func (m *ConnectMessage) SetTopicAliasMaximum(v uint16) {
+    p := &packet.PropTopicAliasMaximum{}
+    p.V = v
+    m.varHeader.props = append(m.varHeader.props, p)
+}
+
+func (m *ConnectMessage) SetRequestResponseInformation(v byte) {
+    p := &packet.PropRequestResponseInformation{}
+    p.V = v
+    m.varHeader.props = append(m.varHeader.props, p)
+}
+
+func (m *ConnectMessage) SetRequestProblemInformation(v byte) {
+    p := &packet.PropRequestProblemInformation{}
+    p.V = v
+    m.varHeader.props = append(m.varHeader.props, p)
+}
+
+func (m *ConnectMessage) SetUserProperty(props map[string]string) {
+    for k, v := range props {
+        p := &packet.PropUserProperty{}
+        pair, err := packet.NewStringPair(k, v)
+        if err != nil {
+            p.V = pair
+            m.varHeader.props = append(m.varHeader.props, p)
+        }
+    }
+}
+
+func (m *ConnectMessage) SetAuthenticationMethod(v string) {
+    p := &packet.PropAuthenticationMethod{}
+    s, err := packet.FromString(v)
+    if err != nil {
+        p.V = s
+        m.varHeader.props = append(m.varHeader.props, p)
+    }
+}
+
+func (m *ConnectMessage) SetAuthenticationData(v []byte) {
+    p := &packet.PropAuthenticationData{}
+    s, err := packet.FromString(string(v))
+    if err != nil {
+        p.V = s
+        m.varHeader.props = append(m.varHeader.props, p)
+    }
+}
+
+func (m *ConnectMessage) GetSessionExpiryInterval() uint32 {
+    p := packet.FindPropValue(packet.SessionExpiryInterval, m.varHeader.props).(*packet.PropSessionExpiryInterval)
+    return p.V
+}
+
+//func (m *ConnectMessage) GetReceiveMaximum() uint16 {
+//    p := &packet.PropReceiveMaximum{}
+//    p.V = v
+//    m.varHeader.props = append(m.varHeader.props, p)
+//}
+//
+//func (m *ConnectMessage) GetMaximumPacketSize() uint32 {
+//    p := &packet.PropMaximumPacketSize{}
+//    p.V = v
+//    m.varHeader.props = append(m.varHeader.props, p)
+//}
+//
+//func (m *ConnectMessage) GtTopicAliasMaximum() uint16 {
+//    p := &packet.PropTopicAliasMaximum{}
+//    p.V = v
+//    m.varHeader.props = append(m.varHeader.props, p)
+//}
+//
+//func (m *ConnectMessage) GetRequestResponseInformation() byte {
+//    p := &packet.PropRequestResponseInformation{}
+//    p.V = v
+//    m.varHeader.props = append(m.varHeader.props, p)
+//}
+//
+//func (m *ConnectMessage) GetRequestProblemInformation() byte {
+//    p := &packet.PropRequestProblemInformation{}
+//    p.V = v
+//    m.varHeader.props = append(m.varHeader.props, p)
+//}
+//
+//func (m *ConnectMessage) GetUserProperty() map[string]string {
+//    for k, v := range props {
+//        p := &packet.PropUserProperty{}
+//        pair, err := packet.NewStringPair(k, v)
+//        if err != nil {
+//            p.V = pair
+//            m.varHeader.props = append(m.varHeader.props, p)
+//        }
+//    }
+//}
+//
+//func (m *ConnectMessage) GetAuthenticationMethod() string {
+//    p := &packet.PropAuthenticationMethod{}
+//    s, err := packet.FromString(v)
+//    if err != nil {
+//        p.V = s
+//        m.varHeader.props = append(m.varHeader.props, p)
+//    }
+//}
+//
+//func (m *ConnectMessage) GetAuthenticationData() []byte {
+//    p := &packet.PropAuthenticationData{}
+//    s, err := packet.FromString(string(v))
+//    if err != nil {
+//        p.V = s
+//        m.varHeader.props = append(m.varHeader.props, p)
+//    }
+//}

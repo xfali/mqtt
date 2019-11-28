@@ -32,6 +32,17 @@ func NewString(s string) (*String, error) {
     return &ret, nil
 }
 
+func FromString(s string) (String, error) {
+    if len(s) > math.MaxUint16 {
+        return String{}, errcode.StringOutOfRange
+    }
+    ret := String{
+        length: uint16(len(s)),
+        data:   []byte(s),
+    }
+    return ret, nil
+}
+
 func NewStringPair(s1, s2 string) (StringPair, error) {
     if len(s1) > math.MaxUint16 || len(s2) > math.MaxUint16 {
         return [2]String{}, errcode.StringOutOfRange
@@ -47,6 +58,10 @@ func NewStringPair(s1, s2 string) (StringPair, error) {
         },
     }
     return ret, nil
+}
+
+func (p StringPair) Equals(other StringPair) bool {
+    return p[0].String() == other[0].String() && p[1].String() == other[1].String()
 }
 
 func EncodeString(w io.Writer, s string) (int, error) {
