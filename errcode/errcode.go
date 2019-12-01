@@ -16,12 +16,13 @@ func (r *Reason) Error() string {
 }
 
 var (
-    StringOutOfRange        = &Reason{Msg: "String is out of range:Max is 65535 ", Code: ReasonProtocolError}
-    ParseVarIntFailed       = &Reason{Msg: "Parse VarInt error", Code: ReasonProtocolError}
-    UnknownProperty         = &Reason{Msg: "Unknown Property error", Code: ReasonProtocolError}
-    ProtocolNameError       = &Reason{Msg: "Protocol Name error", Code: ReasonProtocolError}
-    MessageNotSupport       = &Reason{Msg: "Message Not Support", Code: ReasonProtocolError}
-    MessageReadSizeNotMatch = &Reason{Msg: "Message Read Size Not Match", Code: ReasonProtocolError}
+    StringOutOfRange         = &Reason{Msg: "String is out of range:Max is 65535 ", Code: ReasonProtocolError}
+    ParseVarIntFailed        = &Reason{Msg: "Parse VarInt error", Code: ReasonProtocolError}
+    UnknownProperty          = &Reason{Msg: "Unknown Property error", Code: ReasonProtocolError}
+    ProtocolNameError        = &Reason{Msg: "Protocol Name error", Code: ReasonProtocolError}
+    MessageNotSupport        = &Reason{Msg: "Message Not Support", Code: ReasonProtocolError}
+    MessageReadSizeNotMatch  = &Reason{Msg: "Message Read Size Not Match", Code: ReasonProtocolError}
+    DisconnectMissReasonCode = &Reason{Msg: "Disconnect Miss ReasonCode", Code: ReasonProtocolError}
 
     NormalDisconnection                 = &Reason{Msg: "Normal disconnection", Code: ReasonNormalDisconnection}
     GrantedQoS0                         = &Reason{Msg: "Granted QoS 0", Code: ReasonGrantedQoS0}

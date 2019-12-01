@@ -491,6 +491,10 @@ func ReadPropertyMap(r io.Reader) (map[int64]Property, int, error) {
 }
 
 func WriteProperties(w io.Writer, props []Property) (int, error) {
+    if len(props) == 0 {
+        return 0, nil
+    }
+
     v := VarInt{}
     propLen := 0
     for _, p := range props {

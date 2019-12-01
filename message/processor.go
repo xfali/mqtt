@@ -27,6 +27,7 @@ func UnsubscribeMessageCreator() Message { return NewUnsubscribeMessage() }
 func UnsubAckMessageCreator() Message    { return NewUnsubAckMessage() }
 func PingReqMessageCreator() Message     { return NewPingReqMessage() }
 func PingRespMessageCreator() Message    { return NewPingRespMessage() }
+func DisconnectMessageCreator() Message  { return NewDisconnectMessage() }
 
 var creatorMap = map[byte]Creator{
     packet.PktTypeCONNECT:     ConnectMessageCreator,
@@ -42,6 +43,7 @@ var creatorMap = map[byte]Creator{
     packet.PktTypeUNSUBACK:    UnsubAckMessageCreator,
     packet.PktTypePINGREQ:     PingReqMessageCreator,
     packet.PktTypePINGRESP:    PingRespMessageCreator,
+    packet.PktTypeDISCONNECT:  DisconnectMessageCreator,
 }
 
 func ReadMessage(r io.Reader) (Message, int, error) {
