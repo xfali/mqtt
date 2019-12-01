@@ -45,7 +45,7 @@ const (
     PktFlagPINGREQ     = 0 //Reserved	0	0	0	0
     PktFlagPINGRESP    = 0 //Reserved	0	0	0	0
     PktFlagDISCONNECT  = 0 //Reserved	0	0	0	0
-    vAUTH              = 0 //Reserved	0	0	0	0
+    PktFlagAUTH        = 0 //Reserved	0	0	0	0
 )
 
 type FixedHeader struct {
