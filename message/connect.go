@@ -32,6 +32,8 @@ type ConnectPayload struct {
     Password    packet.Bytes
 }
 
+//客户端到服务端的网络连接建立后，客户端发送给服务端的第一个报文必须是CONNECT报文 [MQTT-3.1.0-1]。
+//在一个网络连接上，客户端只能发送一次CONNECT报文。服务端必须将客户端发送的第二个CONNECT报文当作协议违规处理并断开客户端的连接
 type ConnectMessage struct {
     fixedHeader packet.FixedHeader
     varHeader   ConnectVarHeader
@@ -208,6 +210,7 @@ func (m *ConnectMessage) SetWillQos(v byte) {
     m.varHeader.Flag |= (v & 0x3) << 3
 }
 
+//表示协议修订级别
 func (m *ConnectMessage) SetVersion(v byte) {
     m.varHeader.ProtocolVersion = v
 }
@@ -294,21 +297,42 @@ func (m *ConnectMessage) GetPassword() []byte {
 func (m *ConnectMessage) havePassword() bool {
     return int(m.varHeader.Flag) & ^(1 << 6) != 0
 }
-
+//以秒为单位的会话过期间隔（Session Expiry Interval）。包含多个会话过期间隔（Session Expiry Interval）将造成协议错误（Protocol Error）。
+//如果会话过期间隔（Session Expiry Interval）值未指定，则使用0。如果设置为0或者未指定，会话将在网络连接（Network Connection）关闭时结束。
+//如果会话过期间隔（Session Expiry Interval）为0xFFFFFFFF (UINT_MAX)，则会话永不过期。
+//如果网络连接关闭时会话过期间隔（Session Expiry Interval）大于0，则客户端与服务端必须存储会话状态
 func (m *ConnectMessage) SetSessionExpiryInterval(v uint32) {
     p := &packet.PropSessionExpiryInterval{}
     p.V = v
     m.varHeader.props = append(m.varHeader.props, p)
 }
 
-//双字节整数表示的最大接收值
+//以秒为单位的会话过期间隔
+func (m *ConnectMessage) GetSessionExpiryInterval() (uint32, bool) {
+    p := packet.FindPropValue(packet.SessionExpiryInterval, m.varHeader.props)
+    if p == nil {
+        return 0, false
+    }
+    return p.(*packet.PropSessionExpiryInterval).V, true
+}
+
+//客户端使用此值限制客户端愿意同时处理的QoS为1和QoS为2的发布消息最大数量。没有机制可以限制服务端试图发送的QoS为0的发布消息。
+//接收最大值只将被应用在当前网络连接。如果没有设置最大接收值，将使用默认值65535。
 func (m *ConnectMessage) SetReceiveMaximum(v uint16) {
     p := &packet.PropReceiveMaximum{}
     p.V = v
     m.varHeader.props = append(m.varHeader.props, p)
 }
 
-//四字节整数表示的服务端愿意接收的最大报文长度（Maximum Packet Size）。
+func (m *ConnectMessage) GetReceiveMaximum() (uint16, bool) {
+    p := packet.FindPropValue(packet.ReceiveMaximum, m.varHeader.props)
+    if p == nil {
+        return 65535, false
+    }
+    return p.(*packet.PropReceiveMaximum).V, true
+}
+
+//服务端愿意接收的最大报文长度（Maximum Packet Size）。
 //如果没有设置最大报文长度，则按照协议由固定报头中的剩余长度可编码最大值和协议报头对数据包的大小做限制。
 func (m *ConnectMessage) SetMaximumPacketSize(v uint32) {
     p := &packet.PropMaximumPacketSize{}
@@ -316,7 +340,7 @@ func (m *ConnectMessage) SetMaximumPacketSize(v uint32) {
     m.varHeader.props = append(m.varHeader.props, p)
 }
 
-//四字节整数表示的服务端愿意接收的最大报文长度（Maximum Packet Size）。
+//服务端愿意接收的最大报文长度（Maximum Packet Size）。
 //如果没有设置最大报文长度，则按照协议由固定报头中的剩余长度可编码最大值和协议报头对数据包的大小做限制。
 func (m *ConnectMessage) GetMaximumPacketSize() (uint32, bool) {
     p := packet.FindPropValue(packet.MaximumPacketSize, m.varHeader.props)
@@ -425,22 +449,6 @@ func (m *ConnectMessage) GetAuthenticationData() ([]byte, bool) {
         return nil, false
     }
     return []byte(p.(*packet.PropAuthenticationData).V.String()), true
-}
-
-func (m *ConnectMessage) GetSessionExpiryInterval() (uint32, bool) {
-    p := packet.FindPropValue(packet.SessionExpiryInterval, m.varHeader.props)
-    if p == nil {
-        return 0, false
-    }
-    return p.(*packet.PropSessionExpiryInterval).V, true
-}
-
-func (m *ConnectMessage) GetReceiveMaximum() (uint16, bool) {
-    p := packet.FindPropValue(packet.ReceiveMaximum, m.varHeader.props)
-    if p == nil {
-        return 0, false
-    }
-    return p.(*packet.PropReceiveMaximum).V, true
 }
 
 func (m *ConnectMessage) GetRequestResponseInformation() (byte, bool) {
