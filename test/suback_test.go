@@ -12,9 +12,10 @@ import (
     "testing"
 )
 
-func TestPubRec1(t *testing.T) {
-    msg := message.NewPubRecMessage()
+func TestSuback1(t *testing.T) {
+    msg := message.NewSubAckMessage()
     msg.SetPacketIdentifier(6)
+    msg.SetPayload([]byte{1,2,3,4,5,6})
     msg.GetFixedHeader()
 
     t.Log("before")
@@ -30,7 +31,7 @@ func TestPubRec1(t *testing.T) {
         t.Fatal(e2)
     }
 
-    msg2 := message.NewPubRecMessage()
+    msg2 := message.NewSubAckMessage()
     msg2.SetFixedHeader(msg.GetFixedHeader())
     n3, e3 := msg2.ReadVariableHeader(buf)
     if e3 != nil {
@@ -49,9 +50,20 @@ func TestPubRec1(t *testing.T) {
     t.Log(msg2)
 }
 
-func TestPubRec2(t *testing.T) {
-    msg := message.NewPubRecMessage()
-    msg.SetReasonCode(100)
+func TestSuback2(t *testing.T) {
+    msg := message.NewSubAckMessage()
+    msg.SetReasonString("test")
+    msg.SetPayload([]byte(`
+        This is a test Message! This is a test Message! This is a test Message! 
+        This is a test Message! This is a test Message! This is a test Message! 
+        This is a test Message! This is a test Message! This is a test Message! 
+        This is a test Message! This is a test Message! This is a test Message! 
+        This is a test Message! This is a test Message! This is a test Message! 
+        This is a test Message! This is a test Message! This is a test Message! 
+        This is a test Message! This is a test Message! This is a test Message! 
+        This is a test Message! This is a test Message! This is a test Message! 
+        This is a test Message! This is a test Message! This is a test Message! 
+    `))
     msg.SetUserProperty(map[string]string{
         "test1": "1234567890qwertyuiopasdfghjklzxcvbnm",
         "test2": "1234567890qwertyuiopasdfghjklzxcvbnm",
@@ -81,5 +93,5 @@ func TestPubRec2(t *testing.T) {
     t.Log("after")
     t.Log(msg2)
 
-    t.Log(msg2.(*message.PubRecMessage).GetReasonCode())
+    t.Log(msg2.(*message.SubAckMessage).GetPayload())
 }

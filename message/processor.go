@@ -22,6 +22,7 @@ func PubRecMessageCreator() Message    { return NewPubRecMessage() }
 func PubRelMessageCreator() Message    { return NewPubRelMessage() }
 func PubCompMessageCreator() Message   { return NewPubCompMessage() }
 func SubscribeMessageCreator() Message { return NewSubscribeMessage() }
+func SubAckMessageCreator() Message    { return NewSubAckMessage() }
 
 var creatorMap = map[byte]Creator{
     packet.PktTypeCONNECT:   ConnectMessageCreator,
@@ -32,6 +33,7 @@ var creatorMap = map[byte]Creator{
     packet.PktTypePUBREL:    PubRelMessageCreator,
     packet.PktTypePUBCOMP:   PubCompMessageCreator,
     packet.PktTypeSUBSCRIBE: SubscribeMessageCreator,
+    packet.PktTypeSUBACK:    SubAckMessageCreator,
 }
 
 func ReadMessage(r io.Reader) (Message, int, error) {

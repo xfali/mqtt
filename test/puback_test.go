@@ -13,30 +13,30 @@ import (
 )
 
 func TestPuback1(t *testing.T) {
-    conn := message.NewPubAckMessage()
-    conn.SetPacketIdentifier(6)
-    conn.GetFixedHeader()
+    msg := message.NewPubAckMessage()
+    msg.SetPacketIdentifier(6)
+    msg.GetFixedHeader()
 
     t.Log("before")
-    t.Log(conn)
+    t.Log(msg)
 
     buf := bytes.NewBuffer(nil)
-    n, e := conn.WriteVariableHeader(buf)
+    n, e := msg.WriteVariableHeader(buf)
     if e != nil {
         t.Fatal(e)
     }
-    n2, e2 := conn.WritePayload(buf)
+    n2, e2 := msg.WritePayload(buf)
     if e2 != nil {
         t.Fatal(e2)
     }
 
-    conn2 := message.NewPubAckMessage()
-    conn2.SetFixedHeader(conn.GetFixedHeader())
-    n3, e3 := conn2.ReadVariableHeader(buf)
+    msg2 := message.NewPubAckMessage()
+    msg2.SetFixedHeader(msg.GetFixedHeader())
+    n3, e3 := msg2.ReadVariableHeader(buf)
     if e3 != nil {
         t.Fatal(e3)
     }
-    n4, e4 := conn2.ReadPayload(buf)
+    n4, e4 := msg2.ReadPayload(buf)
     if e4 != nil {
         t.Fatal(e4)
     }
@@ -46,30 +46,30 @@ func TestPuback1(t *testing.T) {
     }
 
     t.Log("after")
-    t.Log(conn2)
+    t.Log(msg2)
 }
 
 func TestPuback2(t *testing.T) {
-    conn := message.NewPubAckMessage()
-    conn.SetReasonCode(100)
-    conn.SetUserProperty(map[string]string{
+    msg := message.NewPubAckMessage()
+    msg.SetReasonCode(100)
+    msg.SetUserProperty(map[string]string{
         "test1": "1234567890qwertyuiopasdfghjklzxcvbnm",
         "test2": "1234567890qwertyuiopasdfghjklzxcvbnm",
         "test3": "1234567890qwertyuiopasdfghjklzxcvbnm",
         "test4": "1234567890qwertyuiopasdfghjklzxcvbnm",
     })
-    conn.GetFixedHeader()
+    msg.GetFixedHeader()
 
     t.Log("before")
-    t.Log(conn)
+    t.Log(msg)
 
     buf := bytes.NewBuffer(nil)
-    n, err := message.WriteMessage(buf, conn)
+    n, err := message.WriteMessage(buf, msg)
     if err != nil {
         t.Fatal(err)
     }
 
-    conn2, n2, err2 := message.ReadMessage(buf)
+    msg2, n2, err2 := message.ReadMessage(buf)
     if err2 != nil {
         t.Fatal(err2)
     }
@@ -79,7 +79,7 @@ func TestPuback2(t *testing.T) {
     }
 
     t.Log("after")
-    t.Log(conn2)
+    t.Log(msg2)
 
-    t.Log(conn2.(*message.PubAckMessage).GetReasonCode())
+    t.Log(msg2.(*message.PubAckMessage).GetReasonCode())
 }

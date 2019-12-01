@@ -13,32 +13,32 @@ import (
 )
 
 func TestConnect1(t *testing.T) {
-    conn := message.NewConnectMessage()
-    conn.SetWillEnable(true)
-    conn.SetUsername("test")
-    conn.SetPassword([]byte("123"))
-    conn.SetWillTopic("123")
-    conn.GetFixedHeader()
+    msg := message.NewConnectMessage()
+    msg.SetWillEnable(true)
+    msg.SetUsername("test")
+    msg.SetPassword([]byte("123"))
+    msg.SetWillTopic("123")
+    msg.GetFixedHeader()
 
     t.Log("before")
-    t.Log(conn)
+    t.Log(msg)
 
     buf := bytes.NewBuffer(nil)
-    n, e := conn.WriteVariableHeader(buf)
+    n, e := msg.WriteVariableHeader(buf)
     if e != nil {
         t.Fatal(e)
     }
-    n2, e2 := conn.WritePayload(buf)
+    n2, e2 := msg.WritePayload(buf)
     if e2 != nil {
         t.Fatal(e2)
     }
 
-    conn2 := message.NewConnectMessage()
-    n3, e3 := conn2.ReadVariableHeader(buf)
+    msg2 := message.NewConnectMessage()
+    n3, e3 := msg2.ReadVariableHeader(buf)
     if e3 != nil {
         t.Fatal(e3)
     }
-    n4, e4 := conn2.ReadPayload(buf)
+    n4, e4 := msg2.ReadPayload(buf)
     if e4 != nil {
         t.Fatal(e4)
     }
@@ -48,46 +48,46 @@ func TestConnect1(t *testing.T) {
     }
 
     t.Log("after")
-    t.Log(conn2)
+    t.Log(msg2)
 }
 
 func TestConnect2(t *testing.T) {
-    conn := message.NewConnectMessage()
-    conn.SetWillEnable(true)
-    conn.SetUsername("test")
-    conn.SetPassword([]byte("123"))
-    conn.SetWillTopic("/d12t13/t43uyh/45eu/65eiu/45u34y34syhg/eg435wuyherg345syh")
-    conn.SetSessionExpiryInterval(100)
-    conn.SetCorrelationData([]byte("fasfasfasc3tgergsgsdgsdgds"))
-    conn.SetWillPayload([]byte("fasfascxasfs"))
-    conn.SetContentType("fjlasjflkjaskflasjfkl")
-    conn.SetAuthenticationData([]byte("fdg23y3h54uh564u3yhjhfxju54u"))
-    conn.SetUserProperty(map[string]string{
+    msg := message.NewConnectMessage()
+    msg.SetWillEnable(true)
+    msg.SetUsername("test")
+    msg.SetPassword([]byte("123"))
+    msg.SetWillTopic("/d12t13/t43uyh/45eu/65eiu/45u34y34syhg/eg435wuyherg345syh")
+    msg.SetSessionExpiryInterval(100)
+    msg.SetCorrelationData([]byte("fasfasfasc3tgergsgsdgsdgds"))
+    msg.SetWillPayload([]byte("fasfascxasfs"))
+    msg.SetContentType("fjlasjflkjaskflasjfkl")
+    msg.SetAuthenticationData([]byte("fdg23y3h54uh564u3yhjhfxju54u"))
+    msg.SetUserProperty(map[string]string{
         "test1": "1234567890qwertyuiopasdfghjklzxcvbnm",
         "test2": "1234567890qwertyuiopasdfghjklzxcvbnm",
         "test3": "1234567890qwertyuiopasdfghjklzxcvbnm",
         "test4": "1234567890qwertyuiopasdfghjklzxcvbnm",
     })
-    conn.SetPayloadUserProperty(map[string]string{
+    msg.SetPayloadUserProperty(map[string]string{
         "test1": "1234567890qwertyuiopasdfghjklzxcvbnm",
         "test2": "1234567890qwertyuiopasdfghjklzxcvbnm",
         "test3": "1234567890qwertyuiopasdfghjklzxcvbnm",
         "test4": "1234567890qwertyuiopasdfghjklzxcvbnm",
     })
-    conn.SetWillDelayInterval(100)
-    conn.SetContentType("json")
-    conn.GetFixedHeader()
+    msg.SetWillDelayInterval(100)
+    msg.SetContentType("json")
+    msg.GetFixedHeader()
 
     t.Log("before")
-    t.Log(conn)
+    t.Log(msg)
 
     buf := bytes.NewBuffer(nil)
-    n, err := message.WriteMessage(buf, conn)
+    n, err := message.WriteMessage(buf, msg)
     if err != nil {
         t.Fatal(err)
     }
 
-    conn2, n2, err2 := message.ReadMessage(buf)
+    msg2, n2, err2 := message.ReadMessage(buf)
     if err2 != nil {
         t.Fatal(err2)
     }
@@ -97,7 +97,7 @@ func TestConnect2(t *testing.T) {
     }
 
     t.Log("after")
-    t.Log(conn2)
+    t.Log(msg2)
 
-    t.Log(conn2.(*message.ConnectMessage).GetCorrelationData())
+    t.Log(msg2.(*message.ConnectMessage).GetCorrelationData())
 }
