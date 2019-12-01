@@ -26,6 +26,8 @@ type PublishVarHeader struct {
     PacketIdentifier uint16
     //PUBLISH 属性 PUBLISH Properties
     props []packet.Property
+
+    size int
 }
 
 type PublishMessage struct {
@@ -79,6 +81,8 @@ func (msg *PublishMessage) ReadVariableHeader(r io.Reader) (int, error) {
 
     msg.varHeader.props = props
 
+    msg.varHeader.size = n
+
     return n, nil
 }
 
@@ -105,9 +109,10 @@ func (msg *PublishMessage) WriteVariableHeader(w io.Writer) (int, error) {
 
 func (msg *PublishMessage) ReadPayload(r io.Reader) (n int, err error) {
     size := msg.fixedHeader.RemainLength()
-    w := new(util.CountWriter)
-    msg.WriteVariableHeader(w)
-    size = size - w.Count()
+    //w := new(util.CountWriter)
+    //msg.WriteVariableHeader(w)
+    //size = size - w.Count()
+    size = size - int64(msg.varHeader.size)
 
     if size <= PayloadBufSize {
         buf := make([]byte, size)

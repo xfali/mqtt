@@ -14,16 +14,24 @@ import (
 
 type Creator func() Message
 
-func ConnectMessageCreator() Message { return NewConnectMessage() }
-func ConnackMessageCreator() Message { return NewConnackMessage() }
-func PublishMessageCreator() Message { return NewPublishMessage() }
-func PubAckMessageCreator() Message { return NewPubAckMessage() }
+func ConnectMessageCreator() Message   { return NewConnectMessage() }
+func ConnackMessageCreator() Message   { return NewConnackMessage() }
+func PublishMessageCreator() Message   { return NewPublishMessage() }
+func PubAckMessageCreator() Message    { return NewPubAckMessage() }
+func PubRecMessageCreator() Message    { return NewPubRecMessage() }
+func PubRelMessageCreator() Message    { return NewPubRelMessage() }
+func PubCompMessageCreator() Message   { return NewPubCompMessage() }
+func SubscribeMessageCreator() Message { return NewSubscribeMessage() }
 
 var creatorMap = map[byte]Creator{
-    packet.PktTypeCONNECT: ConnectMessageCreator,
-    packet.PktTypeCONNACK: ConnackMessageCreator,
-    packet.PktTypePUBLISH: PublishMessageCreator,
-    packet.PktTypePUBACK: PubAckMessageCreator,
+    packet.PktTypeCONNECT:   ConnectMessageCreator,
+    packet.PktTypeCONNACK:   ConnackMessageCreator,
+    packet.PktTypePUBLISH:   PublishMessageCreator,
+    packet.PktTypePUBACK:    PubAckMessageCreator,
+    packet.PktTypePUBREC:    PubRecMessageCreator,
+    packet.PktTypePUBREL:    PubRelMessageCreator,
+    packet.PktTypePUBCOMP:   PubCompMessageCreator,
+    packet.PktTypeSUBSCRIBE: SubscribeMessageCreator,
 }
 
 func ReadMessage(r io.Reader) (Message, int, error) {

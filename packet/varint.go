@@ -82,9 +82,12 @@ func (v *VarInt) Bytes() []byte {
     return v.data[:v.cur]
 }
 
-//读取可变整数，完成返回true,未完成还需继续读取返回false
 func (v *VarInt) ToInt() int64 {
     return DecodeVarint(v.Bytes())
+}
+
+func (v *VarInt) ToUint() uint64 {
+    return DecodeVaruint(v.Bytes())
 }
 
 //Base 128 Varint的介绍：https://developers.google.com/protocol-buffers/docs/encoding

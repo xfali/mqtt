@@ -339,10 +339,10 @@ func (prop *VarIntProperty) UnmarshalData(r io.Reader) (int, error) {
         if err != nil {
             return size + n, err
         }
+        size += n
         if b {
             break
         }
-        size += n
     }
     return size, nil
 }

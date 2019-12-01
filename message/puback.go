@@ -24,6 +24,7 @@ type PubAckVarHeader struct {
     props []packet.Property
 }
 
+//PUBACK报文是对QoS 1等级的PUBLISH报文的响应。
 type PubAckMessage struct {
     fixedHeader packet.FixedHeader
     varHeader   PubAckVarHeader
