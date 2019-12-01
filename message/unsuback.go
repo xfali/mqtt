@@ -15,7 +15,7 @@ import (
     "strings"
 )
 
-type SubAckVarHeader struct {
+type UnsubAckVarHeader struct {
     //报文标识符（Packet Identifier）。
     PacketIdentifier uint16
 
@@ -25,25 +25,25 @@ type SubAckVarHeader struct {
     size int
 }
 
-//服务端发送SUBACK报文给客户端，用于确认它已收到并且正在处理SUBSCRIBE报文。
-type SubAckMessage struct {
+//服务端发送UNSUBACK报文给客户端用于确认收到UNSUBSCRIBE报文。
+type UnsubAckMessage struct {
     fixedHeader packet.FixedHeader
-    varHeader   SubAckVarHeader
+    varHeader   UnsubAckVarHeader
     payload     []byte
 }
 
-func NewSubAckMessage() *SubAckMessage {
-    ret := &SubAckMessage{
-        fixedHeader: packet.CreateFixedHeader(packet.PktTypeSUBACK, packet.PktFlagSUBACK, 0),
+func NewUnsubAckMessage() *UnsubAckMessage {
+    ret := &UnsubAckMessage{
+        fixedHeader: packet.CreateFixedHeader(packet.PktTypeUNSUBACK, packet.PktFlagUNSUBACK, 0),
     }
     return ret
 }
 
-func (m *SubAckMessage) SetFixedHeader(header packet.FixedHeader) {
+func (m *UnsubAckMessage) SetFixedHeader(header packet.FixedHeader) {
     m.fixedHeader = header
 }
 
-func (m *SubAckMessage) GetFixedHeader() packet.FixedHeader {
+func (m *UnsubAckMessage) GetFixedHeader() packet.FixedHeader {
     w := new(util.CountWriter)
     m.WriteVariableHeader(w)
     m.WritePayload(w)
@@ -51,7 +51,7 @@ func (m *SubAckMessage) GetFixedHeader() packet.FixedHeader {
     return m.fixedHeader
 }
 
-func (msg *SubAckMessage) ReadVariableHeader(r io.Reader) (int, error) {
+func (msg *UnsubAckMessage) ReadVariableHeader(r io.Reader) (int, error) {
     buf := make([]byte, 2)
     n, err := r.Read(buf)
     if err != nil {
@@ -78,7 +78,7 @@ func (msg *SubAckMessage) ReadVariableHeader(r io.Reader) (int, error) {
     return n, nil
 }
 
-func (msg *SubAckMessage) WriteVariableHeader(w io.Writer) (int, error) {
+func (msg *UnsubAckMessage) WriteVariableHeader(w io.Writer) (int, error) {
     n, err := w.Write([]byte{
         byte(msg.varHeader.PacketIdentifier >> 8),
         byte(msg.varHeader.PacketIdentifier & 0xFF),
@@ -91,7 +91,7 @@ func (msg *SubAckMessage) WriteVariableHeader(w io.Writer) (int, error) {
     return n + n2, err2
 }
 
-func (msg *SubAckMessage) ReadPayload(r io.Reader) (n int, err error) {
+func (msg *UnsubAckMessage) ReadPayload(r io.Reader) (n int, err error) {
     size := msg.fixedHeader.RemainLength()
     size = size - int64(msg.varHeader.size)
 
@@ -115,33 +115,33 @@ func (msg *SubAckMessage) ReadPayload(r io.Reader) (n int, err error) {
     return
 }
 
-func (msg *SubAckMessage) WritePayload(w io.Writer) (int, error) {
+func (msg *UnsubAckMessage) WritePayload(w io.Writer) (int, error) {
     return w.Write(msg.payload)
 }
 
-func (msg *SubAckMessage) Valid() bool {
+func (msg *UnsubAckMessage) Valid() bool {
     return true
 }
 
-func (msg *SubAckMessage) SetPacketIdentifier(v uint16) {
+func (msg *UnsubAckMessage) SetPacketIdentifier(v uint16) {
     msg.varHeader.PacketIdentifier = v
 }
 
-func (msg *SubAckMessage) GetPacketIdentifier() uint16 {
+func (msg *UnsubAckMessage) GetPacketIdentifier() uint16 {
     return msg.varHeader.PacketIdentifier
 }
 
-func (m *SubAckMessage) SetPayload(v []byte) {
+func (m *UnsubAckMessage) SetPayload(v []byte) {
     m.payload = v
 }
 
-func (m *SubAckMessage) GetPayload() []byte {
+func (m *UnsubAckMessage) GetPayload() []byte {
     return m.payload
 }
 
 //UTF-8编码的字符串，表示此次响应相关的原因。
 // 此原因字符串（Reason String）是为诊断而设计的可读字符串，不应该被客户端所解析。
-func (m *SubAckMessage) SetReasonString(v string) {
+func (m *UnsubAckMessage) SetReasonString(v string) {
     p := &packet.PropReasonString{}
     s, err := packet.FromString(v)
     if err == nil {
@@ -152,7 +152,7 @@ func (m *SubAckMessage) SetReasonString(v string) {
 
 //UTF-8编码的字符串，表示此次响应相关的原因。
 // 此原因字符串（Reason String）是为诊断而设计的可读字符串，不应该被客户端所解析。
-func (m *SubAckMessage) GetReasonString() (string, bool) {
+func (m *UnsubAckMessage) GetReasonString() (string, bool) {
     p := packet.FindPropValue(packet.ReasonString, m.varHeader.props)
     if p == nil {
         return "", false
@@ -162,7 +162,7 @@ func (m *SubAckMessage) GetReasonString() (string, bool) {
 
 //跟随其后的是UTF-8字符串对。此属性可用于向客户端提供包括诊断信息在内的附加信息。
 //如果加上用户属性之后的CONNACK报文长度超出了客户端指定的最大报文长度，则服务端不能发送此属性
-func (m *SubAckMessage) SetUserProperty(props map[string]string) {
+func (m *UnsubAckMessage) SetUserProperty(props map[string]string) {
     for k, v := range props {
         p := &packet.PropUserProperty{}
         pair, err := packet.NewStringPair(k, v)
@@ -175,7 +175,7 @@ func (m *SubAckMessage) SetUserProperty(props map[string]string) {
 
 //跟随其后的是UTF-8字符串对。此属性可用于向客户端提供包括诊断信息在内的附加信息。
 //如果加上用户属性之后的CONNACK报文长度超出了客户端指定的最大报文长度，则服务端不能发送此属性
-func (m *SubAckMessage) GetUserProperty() (map[string]string, bool) {
+func (m *UnsubAckMessage) GetUserProperty() (map[string]string, bool) {
     ret := map[string]string{}
     packet.FindPropValues(packet.UserProperty, m.varHeader.props, func(property packet.Property) bool {
         if property != nil {
@@ -187,7 +187,7 @@ func (m *SubAckMessage) GetUserProperty() (map[string]string, bool) {
     return ret, len(ret) > 0
 }
 
-func (v *SubAckVarHeader) String() string {
+func (v *UnsubAckVarHeader) String() string {
     builder := strings.Builder{}
     for i := range v.props {
         builder.WriteString(fmt.Sprintf("\t%v\n", v.props[i]))
@@ -196,7 +196,7 @@ func (v *SubAckVarHeader) String() string {
         v.PacketIdentifier, builder.String())
 }
 
-func (v *SubAckMessage) String() string {
+func (v *UnsubAckMessage) String() string {
     return fmt.Sprintf("fixed header: \n%v\nvar header:\n%s\npayload:\n%v\n",
         v.fixedHeader, v.varHeader.String(), v.payload)
 }

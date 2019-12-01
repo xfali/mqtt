@@ -30,7 +30,6 @@ type SubscribeVarHeader struct {
     size int
 }
 
-//PUBACK报文是对QoS 1等级的PUBLISH报文的响应。
 type SubscribeMessage struct {
     fixedHeader packet.FixedHeader
     varHeader   SubscribeVarHeader

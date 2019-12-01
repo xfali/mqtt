@@ -24,6 +24,9 @@ func PubCompMessageCreator() Message     { return NewPubCompMessage() }
 func SubscribeMessageCreator() Message   { return NewSubscribeMessage() }
 func SubAckMessageCreator() Message      { return NewSubAckMessage() }
 func UnsubscribeMessageCreator() Message { return NewUnsubscribeMessage() }
+func UnsubAckMessageCreator() Message    { return NewUnsubAckMessage() }
+func PingReqMessageCreator() Message     { return NewPingReqMessage() }
+func PingRespMessageCreator() Message    { return NewPingRespMessage() }
 
 var creatorMap = map[byte]Creator{
     packet.PktTypeCONNECT:     ConnectMessageCreator,
@@ -36,6 +39,9 @@ var creatorMap = map[byte]Creator{
     packet.PktTypeSUBSCRIBE:   SubscribeMessageCreator,
     packet.PktTypeSUBACK:      SubAckMessageCreator,
     packet.PktTypeUNSUBSCRIBE: UnsubscribeMessageCreator,
+    packet.PktTypeUNSUBACK:    UnsubAckMessageCreator,
+    packet.PktTypePINGREQ:     PingReqMessageCreator,
+    packet.PktTypePINGRESP:    PingRespMessageCreator,
 }
 
 func ReadMessage(r io.Reader) (Message, int, error) {

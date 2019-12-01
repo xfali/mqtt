@@ -25,10 +25,9 @@ type UnsubscribeVarHeader struct {
     size int
 }
 
-//PUBACK报文是对QoS 1等级的PUBLISH报文的响应。
 type UnsubscribeMessage struct {
     fixedHeader packet.FixedHeader
-    varHeader   SubAckVarHeader
+    varHeader   UnsubscribeVarHeader
     payload     []string
 }
 
